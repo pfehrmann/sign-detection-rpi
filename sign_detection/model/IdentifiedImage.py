@@ -1,4 +1,4 @@
-from sign_detection.Image import Image
+from sign_detection.model.Image import Image
 
 
 class IdentifiedImage(Image):

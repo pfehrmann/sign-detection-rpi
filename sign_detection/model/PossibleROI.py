@@ -1,4 +1,4 @@
-from sign_detection.RegionOfInterest import ROI
+from sign_detection.model.RegionOfInterest import ROI
 
 
 class PossibleROI(ROI):
