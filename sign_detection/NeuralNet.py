@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class NeuralNet:
+class NeuralNet(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
