@@ -4,13 +4,33 @@ layer {
   type: "ImageData"
   top: "data"
   top: "label"
+  include {
+    phase: TRAIN
+  }
   image_data_param {
-    source: "data/_temp/file_list.txt"
-    batch_size: 50
+    source: "data/_temp/file_list_train.txt"
+    batch_size: 16
     new_height: 256
     new_width: 256
   }
 }
+
+layer {
+  name: "data"
+  type: "ImageData"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  image_data_param {
+    source: "data/_temp/file_list_test.txt"
+    batch_size: 4
+    new_height: 256
+    new_width: 256
+  }
+}
+
 layer {
   name: "conv1"
   type: "Convolution"
