@@ -5,12 +5,15 @@ class RegionOfInterest:
     x2 = property()
     y2 = property()
 
+    sign = property()
+
     def __init__(self, x1, y1, x2, y2, sign):
         """
         :type x1: int
         :type y1: int
         :type x2: int
         :type y2: int
+        :type sign: int
         """
 
         self.x1 = x1
@@ -44,3 +47,11 @@ class RegionOfInterest:
     @y2.setter
     def y2(self, value):
         self._y2 = value
+
+    @sign.setter
+    def sign(self, value):
+        self._sign = value
+
+    @sign.getter
+    def sign(self):
+        return self._sign
