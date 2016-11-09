@@ -9,9 +9,10 @@ layer {
   }
   image_data_param {
     source: "data/_temp/file_list_train.txt"
-    batch_size: 16
-    new_height: 256
-    new_width: 256
+    batch_size: 32
+    shuffle: true
+    new_height: 128
+    new_width: 128
   }
 }
 
@@ -26,8 +27,9 @@ layer {
   image_data_param {
     source: "data/_temp/file_list_test.txt"
     batch_size: 4
-    new_height: 256
-    new_width: 256
+    shuffle: true
+    new_height: 128
+    new_width: 128
   }
 }
 
