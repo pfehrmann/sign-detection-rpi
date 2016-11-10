@@ -9,10 +9,10 @@ layer {
   }
   image_data_param {
     source: "data/_temp/file_list_train.txt"
-    batch_size: 16
+    new_width: 64
+    new_height: 64
+    batch_size: 64
     shuffle: true
-    new_height: 128
-    new_width: 128
   }
 }
 layer {
@@ -25,10 +25,10 @@ layer {
   }
   image_data_param {
     source: "data/_temp/file_list_test.txt"
-    batch_size: 4
+    new_width: 64
+    new_height: 64
+    batch_size: 89
     shuffle: true
-    new_height: 128
-    new_width: 128
   }
 }
 layer {
@@ -401,20 +401,30 @@ layer {
   type: "Pooling"
   pooling_param {
     pool: AVE
-    kernel_size: 3
-    stride: 1
+    global_pooling: true
+  }
+}
+layer {
+  name: "fc1"
+  type: "InnerProduct"
+  bottom: "pool4"
+  top: "fc1"
+  inner_product_param {
+    num_output: 43
   }
 }
 layer {
   name: "accuracy"
   type: "Accuracy"
-  bottom: "pool4"
+  bottom: "fc1"
   bottom: "label"
   top: "accuracy"
-  include: { phase: TEST }
+  include {
+    phase: TEST
+  }
 }
 layer {
-  bottom: "pool4"
+  bottom: "fc1"
   bottom: "label"
   top: "loss"
   name: "loss"
