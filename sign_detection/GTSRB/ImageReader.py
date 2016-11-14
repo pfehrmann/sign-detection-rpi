@@ -1,7 +1,7 @@
 import csv
 from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
-
+import caffe
 
 def read_traffic_signs(root_path):
     """
