@@ -1,9 +1,5 @@
 # imports
-import json
-import time
-import pickle
 import scipy.misc
-import skimage.io
 import caffe
 
 import numpy as np
@@ -11,25 +7,19 @@ import os.path as osp
 
 from xml.dom import minidom
 from random import shuffle
-from threading import Thread
 from PIL import Image
-import csv
 import csv
 from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
 
-from tools import SimpleTransformer
-
 
 class GtsdbSlidingWindowDataLayer(caffe.Layer):
-
     """
     This is a simple synchronous datalayer for training a multilabel model on
     PASCAL.
     """
 
     def setup(self, bottom, top):
-
         self.top_names = ['data', 'label']
 
         # === Read input parameters ===
@@ -83,7 +73,6 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
 
 
 class BatchLoader(object):
-
     """
     This class abstracts away the loading of images.
     Images can either be loaded singly, or in a batch. The latter is used for
@@ -96,31 +85,48 @@ class BatchLoader(object):
         self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
         self.im_shape = params['im_shape']
+        self._cur = 0
 
         # get list of image indexes.
         list_file = 'gt.txt'
 
-        self.images = []  # images
-        gtFile = open(self.gtsdb_root + 'gt.txt')  # annotations file
+        self.duplicated_images = []  # images
+        gtFile = open(self.gtsdb_root + "/" + list_file)  # annotations file
         gtReader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
 
         # loop over all images in current annotations file
         for row in gtReader:
-            path_to_image = self.gtsdb_root + row[0]
+            path_to_image = self.gtsdb_root + "/" + row[0]
 
             # find size of image
             roi = [RegionOfInterest(row[1], row[2], row[3], row[4], row[5])]
             image = IdentifiedImage(path_to_image, roi)
-            self.images.append(image)
+            self.duplicated_images.append(image)
         gtFile.close()
 
+        # fill in all the images without a region of interest
+        for i in range(0, 899):
+            found = False
+            for image in self.duplicated_images:
+                if (str(i) in image.path):
+                    found = True
+                    break
+
+            if (not found):
+                self.duplicated_images.append(IdentifiedImage(self.gtsdb_root + '/' + format(i, '05d') + '.ppm', []))
+
         # loop over all images to make sure, that no duplicat file path exists
-        last_image = self.images[0]
-        for image in self.images:
-            if(last_image.path == image.path):
-                last_image.region_of_interests = last_image.region_of_interests.extend(image.region_of_interests)
+        self.images = []
+        last_image = self.duplicated_images[0]
+        self.images.append(last_image)
+        for image in self.duplicated_images[0:]:
+            if (last_image.path == image.path):
+                rois = last_image.region_of_interests
+                rois.extend(image.region_of_interests)
+                last_image.region_of_interests = rois
             else:
                 last_image = image
+                self.images.append(last_image)
 
         print "BatchLoader initialized with {} images".format(
             len(self.images))
@@ -147,11 +153,23 @@ class BatchLoader(object):
             # there are of each class. Only if they are present.
             # The "-1" is b/c we are not interested in the background
             # class.
-            multilabel[roi.sign-1] = 1
+            multilabel[int(roi.sign) - 1] = 1
 
         self._cur += 1
-        return image_data, multilabel
+        return preprocess(image_data), multilabel
 
+
+def preprocess(im):
+    """
+    preprocess() emulate the pre-processing occuring in the vgg16 caffe
+    prototxt.
+    """
+
+    im = np.float32(im)
+    im = im[:, :, ::-1]  # change to BGR
+    im = im.transpose((2, 0, 1))
+
+    return im
 
 def load_pascal_annotation(index, pascal_root):
     """
@@ -164,12 +182,13 @@ def load_pascal_annotation(index, pascal_root):
     classes = ('__background__',  # always index 0
                'aeroplane', 'bicycle', 'bird', 'boat',
                'bottle', 'bus', 'car', 'cat', 'chair',
-                         'cow', 'diningtable', 'dog', 'horse',
-                         'motorbike', 'person', 'pottedplant',
-                         'sheep', 'sofa', 'train', 'tvmonitor')
+               'cow', 'diningtable', 'dog', 'horse',
+               'motorbike', 'person', 'pottedplant',
+               'sheep', 'sofa', 'train', 'tvmonitor')
     class_to_ind = dict(zip(classes, xrange(21)))
 
     filename = osp.join(pascal_root, 'Annotations', index + '.xml')
+
     # print 'Loading: {}'.format(filename)
 
     def get_data_from_tag(node, tag):
