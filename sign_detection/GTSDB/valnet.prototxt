@@ -6,7 +6,7 @@ layer {
     python_param {
         module: "gtsrb_sliding_window_datalayer"
         layer: "GtsdbSlidingWindowDataLayer"
-        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [227, 227], \'split\': \'train\', \'batch_size\': 128}"
+        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [1360, 800], \'split\': \'train\', \'batch_size\': 4}"
     }
 }
 layer {
@@ -17,7 +17,7 @@ layer {
   convolution_param {
     num_output: 96
     pad: 0
-    kernel_size: 11
+    kernel_size: 23
     group: 1
     stride: 4
   }
@@ -29,9 +29,28 @@ layer {
   top: "conv1"
 }
 layer {
+  name: "conv1.1"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv1.1"
+  convolution_param {
+    num_output: 96
+    pad: 0
+    kernel_size: 23
+    group: 1
+    stride: 4
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1.1"
+  top: "conv1.1"
+}
+layer {
   name: "pool1"
   type: "Pooling"
-  bottom: "conv1"
+  bottom: "conv1.1"
   top: "pool1"
   pooling_param {
     pool: MAX
@@ -40,20 +59,9 @@ layer {
   }
 }
 layer {
-  name: "norm1"
-  type: "LRN"
-  bottom: "pool1"
-  top: "norm1"
-  lrn_param {
-    local_size: 5
-    alpha: 0.0001
-    beta: 0.75
-  }
-}
-layer {
   name: "conv2"
   type: "Convolution"
-  bottom: "norm1"
+  bottom: "pool1"
   top: "conv2"
   convolution_param {
     num_output: 256

@@ -41,7 +41,7 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         # once. Else, we'd have to do it in the reshape call.
         top[0].reshape(
             self.batch_size, 3, params['im_shape'][0], params['im_shape'][1])
-        # Note the 43 channels (because GTSDB has 20 classes.)
+        # Note the 43 channels (because GTSDB has 43 classes.)
         top[1].reshape(self.batch_size, 43)
 
         print_info("GtsrbSlidingWindowDataLayer", params)
