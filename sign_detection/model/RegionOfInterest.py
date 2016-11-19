@@ -1,3 +1,6 @@
+import math
+
+
 class RegionOfInterest:
     x1 = property()
     y1 = property()
@@ -55,3 +58,15 @@ class RegionOfInterest:
     @sign.getter
     def sign(self):
         return self._sign
+
+    def getOverlap(self, other):
+        """
+        Calulated the overlap of two regions
+        :param other: The region of interest to intersect with
+        :return: Returns a percentage of the overlap
+
+        :type other: RegionOfInterest
+        """
+        overlap = 0
+        return 0.01 * max(0, min(self.x2, other.x2) - max(self.x1, other.x1)) \
+               * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
