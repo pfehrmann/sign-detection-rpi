@@ -9,6 +9,8 @@ from xml.dom import minidom
 from random import shuffle
 from PIL import Image
 import csv
+
+from sign_detection.model import SlidingWindow
 from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
 
@@ -22,18 +24,11 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
     def setup(self, bottom, top):
         self.top_names = ['data', 'label']
 
-        # === Read input parameters ===
-
         # params is a python dictionary with layer parameters.
         params = eval(self.param_str)
-
-        # Check the parameters for validity.
         check_params(params)
 
-        # store input as class variables
         self.batch_size = params['batch_size']
-
-        # Create a batch loader to load the images.
         self.batch_loader = BatchLoader(params, None)
 
         # === reshape tops ===
@@ -52,7 +47,7 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         """
         for itt in range(self.batch_size):
             # Use the batch loader to load the next image.
-            im, multilabel = self.batch_loader.load_next_image()
+            im, multilabel = self.batch_loader.load_next_window()
 
             # Add directly to the caffe data layer
             top[0].data[itt, ...] = im
@@ -78,6 +73,7 @@ class BatchLoader(object):
     Images can either be loaded singly, or in a batch. The latter is used for
     the asyncronous data layer to preload batches while other processing is
     performed.
+    :ivar _image: IdentifiedImage
     """
 
     def __init__(self, params, result):
@@ -86,6 +82,8 @@ class BatchLoader(object):
         self.gtsdb_root = params['gtsdb_root']
         self.im_shape = params['im_shape']
         self._cur = 0
+        self._sliding_window = None
+        self._image = None
 
         # get list of image indexes.
         list_file = 'gt.txt'
@@ -105,7 +103,7 @@ class BatchLoader(object):
         gtFile.close()
 
         # fill in all the images without a region of interest
-        for i in range(0, 899):
+        for i in range(0, 599):
             found = False
             for image in self.duplicated_images:
                 if (str(i) in image.path):
@@ -131,6 +129,31 @@ class BatchLoader(object):
         print "BatchLoader initialized with {} images".format(
             len(self.images))
 
+    def load_next_window(self):
+        if (self._sliding_window == None):
+            self._image = self.load_next_image()
+            self._sliding_window = SlidingWindow.SlidingWindow(image=self._image, size=0.01)
+
+        # Create a region of interest
+        # ToDO Check if this is a method of the SlidingWindow class
+        x1 = self._sliding_window.window_pos[0]
+        x2 = self._sliding_window.window_pos[0] + self._sliding_window.window_size[0]
+        y1 = self._sliding_window.window_pos[1]
+        y2 = self._sliding_window.window_pos[1] + self._sliding_window.window_size[1]
+
+        current_window = RegionOfInterest(x1, y1, x2, y2, sign=0)
+
+        # Find all regions of interest, that overlap to at lest 90% with this region of interest
+        regions = self._image.get_overlapping_regions(current_window, 0.9)
+
+        # Load and prepare ground truth
+        multilabel = np.zeros(43).astype(np.float32)
+        for roi in regions:
+            multilabel[int(roi.sign) - 1] = 1
+
+        # ToDo Catch exception of iter and instead return the next image.
+        return self._sliding_window.__iter__
+
     def load_next_image(self):
         """
         Load the next image in a batch.
@@ -146,17 +169,8 @@ class BatchLoader(object):
             osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
         image_data = scipy.misc.imresize(image_data, self.im_shape)  # resize
 
-        # Load and prepare ground truth
-        multilabel = np.zeros(43).astype(np.float32)
-        for roi in image.region_of_interests:
-            # in the multilabel problem we don't care how MANY instances
-            # there are of each class. Only if they are present.
-            # The "-1" is b/c we are not interested in the background
-            # class.
-            multilabel[int(roi.sign) - 1] = 1
-
         self._cur += 1
-        return preprocess(image_data), multilabel
+        return preprocess(image_data)
 
 
 def preprocess(im):
@@ -170,6 +184,7 @@ def preprocess(im):
     im = im.transpose((2, 0, 1))
 
     return im
+
 
 def load_pascal_annotation(index, pascal_root):
     """
