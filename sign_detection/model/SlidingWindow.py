@@ -3,7 +3,7 @@ import Image
 
 
 class SlidingWindow(object):
-    def __init__(self, image, size, ratio, overlap):
+    def __init__(self, image, size, ratio=1, overlap=0.9):
         """
         Creates a new sliding window.
         :param image: The Image to use
