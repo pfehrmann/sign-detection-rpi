@@ -2,7 +2,7 @@ import caffe
 
 
 def train(solver_name="lenet_solver.prototxt", gpu=False):
-    if (gpu):
+    if gpu:
         caffe.set_device(0)
         caffe.set_mode_gpu()
     else:

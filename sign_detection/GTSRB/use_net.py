@@ -1,9 +1,10 @@
 import caffe
+import argparse
 
 
 def identify_image(model, weights, image_path):
-    caffe.set_device(0)
-    caffe.set_mode_gpu()
+    # caffe.set_device(0)
+    caffe.set_mode_cpu()
 
     net = caffe.Net(model, weights, caffe.TEST)
 
@@ -23,3 +24,25 @@ def identify_image(model, weights, image_path):
     # predicted predicted class
     class_index = out['loss'].argmax()
     return class_index
+
+
+def parse_arguments():
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Use a trained net to identify images')
+    parser.add_argument('image', type=str, nargs='+', help='An image to identify')
+    parser.add_argument('-m', '--model', type=str, default='model.prototxt', help='The model to use (.prototxt)')
+    parser.add_argument('-w', '--weights', type=str, default='weights.caffemodel',
+                        help='The weights to use (trained net / .caffemodel)')
+
+    # Read the input arguments
+    args = parser.parse_args()
+
+    # Only one image allowed for now
+    if len(args.image) > 1:
+        print 'Only one image allowed for now. Ignoring others.'
+
+    # pass arguments and start identifying
+    identify_image(args.model, args.weights, args.image[0])
+
+
+parse_arguments()
