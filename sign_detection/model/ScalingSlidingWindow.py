@@ -7,25 +7,47 @@ from sign_detection.model.Window import Window
 
 class ScalingSlidingWindow(object):
     def __init__(self, image, width, ratio, overlap=0.85, zoom_factor=lambda x: 1 - x * .1):
+        """
+        Creates a new scaling sliding window. It can be used as an iterator.
+        :param image: The image to use (the preprocessed image array).
+        :param width: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
+        :param ratio: The ratio of the sliding window. If it is 0, the images ratio will be used.
+        :param overlap: How much the sliding window will overlap after each step, as fractal.
+        :param zoom_factor: A function to determine the next zoom factor. It will get the number of the iteration,
+               stating with 0. After each iteration the image will be zoomed to the width and height of the original
+               image multiplied with the result of this function.
+        """
+
+        # Copy the constructor arguments
         self.image = image
         self.ratio = ratio
         self.overlap = overlap
         self.zoom = zoom_factor
+
+        # Initiate misc attributes
         self.iteration = 0
         self.reached_max_zoom = False
+
+        # Get the height and width of the image
         self.image_width = self.image.shape[2]
         self.image_height = self.image.shape[1]
 
-        # Create Window to get the shape size
+        # Create Window to get the sliding box size
         self.window = Window.create(width, self.ratio, self.image_height, self.image_width)
 
         # Create first sliding window
         self.__zoom()
 
     def __iter__(self):
+        """see iter in SlidingWindow."""
         return self
 
     def next(self):
+        """
+        Calculates the next window except. A StopIteration will be risen if no next except is available.
+        :return An excerpt of the source image and a region of interest.
+        :returns: numpy.ndarray, RegionOfInterest
+        """
         try:
             return self.slidingWindow.next()
         except StopIteration:
@@ -36,20 +58,39 @@ class ScalingSlidingWindow(object):
             return self.slidingWindow.next()
 
     def __zoom(self):
+        """
+        Creates a new sliding window with the next zoom factor. It will set self.reached_max_zoom if the new sliding
+        window is either at max width or at max height.
+        """
+        """
+        TODO The scaling of the images is currently done by using a transformer, which only works when the image is
+        transposed like (y, x, z) which it is after loading. Currently, the image is passed into the scaling sliding
+        window transposed like (z, y, x) which it is after using the transformer. Consider either using a different
+        scaling method or passing it not transformed into the scaling sliding window.
+        """
+
+        # Scale the image
+        # 1. Find out how much
         factor = self.zoom(self.iteration)
+        # 2. Transpose the image to correct format TODO maybe it should not be done every time...
         transposed = self.image.transpose(1, 2, 0)
+        # 3. Create the transformer to scale
         transformer = caffe.io.Transformer(
             {'data': (1, 3, int(round(self.image_height * factor)), int(round(self.image_width * factor)))}
         )
+        # Set transposing back
         transformer.set_transpose('data', (2, 0, 1))
+        # 5. Finally, scale
         scaled = transformer.preprocess('data', transposed)
+
+        # Create the new sliding window
         self.slidingWindow = SlidingWindow(scaled, self.window.width, self.ratio, self.overlap)
 
         # Check, if it's zoomed to the maximum
         if self.slidingWindow.window.reached_right or self.slidingWindow.window.reached_bottom:
             self.reached_max_zoom = True
 
-        # Up he iteration
+        # Up the iteration
         self.iteration += 1
 
 

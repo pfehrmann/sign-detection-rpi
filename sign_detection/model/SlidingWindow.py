@@ -16,7 +16,7 @@ class SlidingWindow(object):
         """
         Notes:
         In this class, the 'window' is the current box of the sliding window, which is moved though out the iteration,
-        'image' always refers to the loaded image source.
+        while 'image' always refers to the loaded image source.
         """
 
         # Copy constructor values
@@ -80,7 +80,7 @@ class SlidingWindow(object):
         """
         Moves the window to the next position and returns the corresponding excerpt. The region of interest marks the
         position of the excerpt within its source image.
-        :return An excerpt of the source image and a region of interest
+        :return An excerpt of the source image and a region of interest.
         :returns: numpy.ndarray, RegionOfInterest
         """
         self.__move_window()
