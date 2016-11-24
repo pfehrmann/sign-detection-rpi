@@ -1,5 +1,9 @@
 import caffe
 import Image
+import skimage.io
+from PIL import Image as Pil
+
+from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 
 class SlidingWindow(object):
@@ -21,7 +25,7 @@ class SlidingWindow(object):
         self.__load_image()
 
         # init window box
-        self.window_pos = [0, 0]
+        self.window_pos = [-1, -1]
         self.__set_window_size()
         self.step = [int(round(x * self.overlap)) for x in self.window_size]
         self.window_reached_right = False
@@ -33,7 +37,9 @@ class SlidingWindow(object):
         """
         Loads the image into the memory using caffe and sets image_size.
         """
+
         self.image_raw = caffe.io.load_image(self.image.path)
+        skimage.io.imsave('image/whole.png', self.image_raw)
         self.image_size = [self.image_raw.shape[1], self.image_raw.shape[0]]
 
     def __set_window_size(self):
@@ -59,30 +65,66 @@ class SlidingWindow(object):
                 self.window_size = [int(round(self.size)),
                                     int(round(self.size * self.ratio))]
 
-
     def __move_window(self):
-        # check, if the corner is reached
+        if self.window_pos[0] == -1 and self.window_pos[1] == -1:
+            self.window_pos[0] = 0
+            self.window_pos[1] = 1
+            return
+
+        # check, if the right has been reached
         if self.window_reached_right:
-            # If the corner and bottom is reached, the last element has been found.
+            # If the border and bottom have been reached, the last image has been returned.
             if self.window_reached_bottom:
                 raise StopIteration()
+            else:
+                new_x = 0
+                self.window_reached_right = False
 
             # Find the next y coordinate and check if it exceeds the image
             new_y = self.window_pos[1] + self.step[1]
-            if new_y + self.window_size[1] > self.image_size[1]:
-                pass
-        new_x = self.window_pos[0] + self.step[0]
-        if new_x + self.window_size[0] > self.image_size[0]:
-            pass
+            if new_y + self.window_size[1] >= self.image_size[1]:
+                new_y = self.image_size[1] - self.window_size[1]
+                self.window_reached_bottom = True
 
+        else:
+            new_x = self.window_pos[0] + self.step[0]
+            new_y = self.window_pos[1]
+            if new_x + self.window_size[0] >= self.image_size[0]:
+                new_x = self.image_size[0] - self.window_size[0]
+                self.window_reached_right = True
+
+        # move the window
+        self.window_pos[0] = new_x
+        self.window_pos[1] = new_y
 
     def __iter__(self):
-        return_image = self.image_raw[self.window_pos[1]: self.window_pos[1] + self.window_size[1],
-                              self.window_pos[0]: self.window_pos[0] + self.window_size[0],
-                              0: 3]
-        return return_image
+        return self
+
+    def next(self):
+        """
+        :returns: numpy.ndarray, RegionOfInterest
+        """
+        self.__move_window()
+        return_image = self.image_raw[
+                       self.window_pos[1]: self.window_pos[1] + self.window_size[1],
+                       self.window_pos[0]: self.window_pos[0] + self.window_size[0]]
+        region = RegionOfInterest(
+            self.window_pos[0],
+            self.window_pos[1],
+            self.window_pos[0] + self.window_size[0],
+            self.window_pos[1] + self.window_size[1],
+            -1)
+        return return_image, region
 
 
+def test():
+    i = Image.Image('/home/leifb/Downloads/Schilder/Vorfahrt.png')
+    s = SlidingWindow(i, 0.5, 0, 0.5)
 
-i = Image.Image('/home/leifb/Downloads/Schilder/Vorfahrt.jpg')
-s = SlidingWindow(i, 0.5, 0, 0.5)
+    it = 0
+    for image, roi in s:
+        print '(%s,%s)|(%s,%s)' % (roi.x1, roi.y1, roi.x2, roi.y2)
+        skimage.io.imsave('image/%s.bmp' % it, image)
+        it += 1
+
+# test()
