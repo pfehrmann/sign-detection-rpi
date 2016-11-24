@@ -1,14 +1,5 @@
-import math
 
-
-class RegionOfInterest:
-    x1 = property()
-    y1 = property()
-
-    x2 = property()
-    y2 = property()
-
-    sign = property()
+class RegionOfInterest(object):
 
     def __init__(self, x1, y1, x2, y2, sign):
         """
@@ -19,45 +10,81 @@ class RegionOfInterest:
         :type sign: int
         """
 
-        self.x1 = x1
-        self.y1 = y1
+        self.__x1 = x1
+        self.__y1 = y1
 
-        self.x2 = x2
-        self.y2 = y2
+        self.__x2 = x2
+        self.__y2 = y2
 
-        self.sign = sign
+        self.__sign = sign
+
+    @property
+    def x1(self):
+        return self.__x1
 
     @x1.setter
     def x1(self, value):
-        self._x1 = value
+        self.__x1 = value
 
-    @x1.getter
-    def x1(self):
-        return self._x1
+    @property
+    def y1(self):
+        return self.__y1
 
     @y1.setter
     def y1(self, value):
-        self._y1 = value
+        self.__y1 = value
 
-    @y1.getter
-    def y1(self):
-        return self._y1
+    @property
+    def x2(self):
+        return self.__x2
 
     @x2.setter
     def x2(self, value):
-        self._x2 = value
+        self.__x2 = value
+
+    @property
+    def y2(self):
+        return self.__y2
 
     @y2.setter
     def y2(self, value):
-        self._y2 = value
+        self.__y2 = value
+
+    @property
+    def sign(self):
+        return self.__sign
 
     @sign.setter
     def sign(self, value):
-        self._sign = value
+        self.__sign = value
 
-    @sign.getter
-    def sign(self):
-        return self._sign
+    @property
+    def size(self):
+        return [self.x2 - self.x1, self.y2 - self.y1]
+
+    @size.setter
+    def size(self, size):
+        self.x2 = self.x1 + size[0]
+        self.y2 = self.y1 + size[1]
+
+    @property
+    def position(self):
+        return [self.x1, self.y2]
+
+    @position.setter
+    def position(self, value):
+        self.x2 += value[0] - self.x1
+        self.y2 += value[1] - self.y1
+        self.x1 = value[0]
+        self.y1 = value[1]
+
+    @property
+    def width(self):
+        return self.x2 - self.x1
+
+    @property
+    def height(self):
+        return self.y2 - self.y1
 
     def getOverlap(self, other):
         """

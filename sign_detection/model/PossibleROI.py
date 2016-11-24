@@ -1,7 +1,7 @@
-from sign_detection.model.RegionOfInterest import ROI
+from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 
-class PossibleROI(ROI):
+class PossibleROI(RegionOfInterest):
     probability = property()
 
     def __init__(self, x1, y1, x2, y2, sign, probability):

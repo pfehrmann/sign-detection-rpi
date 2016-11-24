@@ -1,7 +1,7 @@
 import caffe
-import Image
+from copy import copy
 import skimage.io
-from sign_detection.model.RegionOfInterest import RegionOfInterest
+from sign_detection.model.Window import Window
 
 
 class SlidingWindow(object):
@@ -11,7 +11,7 @@ class SlidingWindow(object):
         :param image: The image to use (the preprocessed image array).
         :param size: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
         :param ratio: The ratio of the sliding window. If it is 0, the images ratio will be used.
-        :param overlap: How much the sliding window will overlap after each step. 1 means  no overlapping, 0 no moving.
+        :param overlap: How much the sliding window will overlap after each step, as fractal.
         """
         """
         Notes:
@@ -25,92 +25,49 @@ class SlidingWindow(object):
         self.ratio = float(ratio)
         self.overlap = float(overlap)
 
-        # load the image
-        self.__load_image()
+        # get the image size
+        self.image_size = [self.image.shape[2], self.image.shape[1]]
 
         # initiate window box
-        self.window_pos = [-1, -1]  # An invalid position as a start
-        self.__set_window_size()
-        self.step = [int(round(x * self.overlap)) for x in self.window_size]
-
-    def __load_image(self):
-        """
-        Loads the image into the memory using Caffe and sets image_size. Caffe is using skimage, so you can use
-        skimage.io.imsave('image.png', image_array) to save an image for debuging purposes. An image can be cropped
-        by slicing the image array.
-        """
-
-        self.image_raw = caffe.io.load_image(self.image.path)
-        self.image_size = [self.image_raw.shape[1], self.image_raw.shape[0]]
-
-    def __set_window_size(self):
-        """
-        Calculates window_size by using size, ratio and image_size. The rules are defined in the constructor comment.
-        Due to the fact that size can be absolute or relative and the ratio can be taken from the image, multiple
-        code paths are possible, which should be tested!
-        """
-
-        if self.ratio == 0:  # Use the image's ratio
-            if self.size <= 1:  # Size %
-                self.window_size = [int(round(x * self.size)) for x in self.image_size]
-            else:  # Size absolute
-                self.window_size = [int(round(self.size)),
-                                    int(round(self.size * (float(self.image_size[1]) / self.image_size[0])))]
-        else:  # Use given ratio
-            if self.size <= 1:  # Size %
-                x = self.image_size[0] * self.size
-                self.window_size = [int(round(x)),
-                                    int(round(x * self.ratio))]
-            else:  # Size absolute
-                self.window_size = [int(round(self.size)),
-                                    int(round(self.size * self.ratio))]
-
-            self.window_reached_bottom = False
-
-        # Check, if the window size is larger than the image itself
-        self.window_reached_right = self.window_size[0] >= self.image_size[0]
-        self.window_reached_bottom = self.window_size[1] >= self.image_size[1]
-        if self.window_reached_right:
-            self.window_size[0] = self.image_size[0]
-        if self.window_reached_bottom:
-            self.window_size[1] = self.image_size[1]
+        self.window = Window.create(self.size, self.ratio, self.image_size[0], self.image_size[1])
+        self.window.position = [-1, -1]  # An invalid position as a start
+        self.step = [int(round(x * (1 - self.overlap))) for x in self.window.size]
 
     def __move_window(self):
         """
         Moves the window to the next position. If the next position has been reached, a StopIteration will be risen.
         """
         # Check for an 'invalid' position before the window has ever been moved.
-        if self.window_pos[0] < 0 and self.window_pos[1] < 0:
-            self.window_pos = [0, 0]
+        if self.window.x1 < 0 and self.window.y1 < 0:
+            self.window.position = [0, 0]
             return
 
         # Check, if the right side of the image has been reached
-        if self.window_reached_right:
+        if self.window.reached_right:
             # If the right and bottom have been reached, the last image has been returned.
-            if self.window_reached_bottom:
+            if self.window.reached_bottom:
                 raise StopIteration()
 
             # Else, move back to the left and on step down
             new_x = 0
-            self.window_reached_right = False
+            self.window.reached_right = False
 
             # Find the next y coordinate and check if it exceeds the image
-            new_y = self.window_pos[1] + self.step[1]
-            if new_y + self.window_size[1] >= self.image_size[1]:
-                new_y = self.image_size[1] - self.window_size[1]
-                self.window_reached_bottom = True
+            new_y = self.window.y1 + self.step[1]
+            if new_y + self.window.height >= self.image_size[1]:
+                new_y = self.image_size[1] - self.window.height
+                self.window.reached_bottom = True
 
         else:  # Right side has not been reached, move to the right
-            new_x = self.window_pos[0] + self.step[0]
-            new_y = self.window_pos[1]
+            new_x = self.window.x1 + self.step[0]
+            new_y = self.window.y1
             # If the new x exceeds the image
-            if new_x + self.window_size[0] >= self.image_size[0]:
-                new_x = self.image_size[0] - self.window_size[0]
-                self.window_reached_right = True
+            if new_x + self.window.width >= self.image_size[0]:
+                new_x = self.image_size[0] - self.window.width
+                self.window.reached_right = True
 
         # move the window
-        self.window_pos[0] = new_x
-        self.window_pos[1] = new_y
+        self.window.position = [new_x, new_y]
 
     def __iter__(self):
         """
@@ -127,26 +84,38 @@ class SlidingWindow(object):
         :returns: numpy.ndarray, RegionOfInterest
         """
         self.__move_window()
-        return_image = self.image_raw[
-                       self.window_pos[1]: self.window_pos[1] + self.window_size[1],
-                       self.window_pos[0]: self.window_pos[0] + self.window_size[0]]
-        region = RegionOfInterest(
-            self.window_pos[0],
-            self.window_pos[1],
-            self.window_pos[0] + self.window_size[0],
-            self.window_pos[1] + self.window_size[1],
-            -1)
-        return return_image, region
+        return_image = self.image[
+                       0:3,
+                       self.window.y1: self.window.y2,
+                       self.window.x1: self.window.x2]
+        return copy(return_image), copy(self.window)
 
 
 def test():
-    i = Image.Image('/home/leifb/Downloads/Schilder/Vorfahrt.png')
-    s = SlidingWindow(i, 400, 0, 0.8)
+
+    i = caffe.io.load_image('/home/leifb/Downloads/Schilder/Vorfahrt.png')
+    model = '../GTSRB/quadruple_nin_deploy.prototxt'
+    weights = '../GTSRB/data/gtsrb/quadruple_nin_iter_20000.caffemodel'
+
+    # load input and configure prepossessing
+    transformer = caffe.io.Transformer({'data': (1, 3, 412, 963)})
+    transformer.set_transpose('data', (2, 0, 1))
+    transformer.set_channel_swap('data', (2, 1, 0))
+    transformer.set_raw_scale('data', 255.0)
+    processed = transformer.preprocess('data', i)
+
+    s = SlidingWindow(processed, 300, 0, 0.5)
+
+    transformer2 = caffe.io.Transformer({'data': (1, 3, 412, 963)})
+    # transformer2.set_channel_swap('data', (2, 1, 0))
+    transformer2.set_raw_scale('data', 1.0/255.0)
 
     it = 0
     for image, roi in s:
-        print '(%s,%s)|(%s,%s)' % (roi.x1, roi.y1, roi.x2, roi.y2)
-        skimage.io.imsave('image/%s.bmp' % it, image)
+        # back = transformer2.preprocess('data', image)
+        transposed = image.transpose(1, 2, 0)
+        scaled = transformer2.preprocess('data', transposed)
+        skimage.io.imsave('image/%s.bmp' % it, scaled)
         it += 1
 
 # test()
