@@ -5,10 +5,10 @@ from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 
 class SlidingWindow(object):
-    def __init__(self, image, size, ratio=1, overlap=0.9):
+    def __init__(self, image, size, ratio=1, overlap=0.85):
         """
         Creates a new sliding window. It can be used as an iterator.
-        :param image: The Image to use (our Image.py class).
+        :param image: The image to use (the preprocessed image array).
         :param size: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
         :param ratio: The ratio of the sliding window. If it is 0, the images ratio will be used.
         :param overlap: How much the sliding window will overlap after each step. 1 means  no overlapping, 0 no moving.
@@ -32,8 +32,6 @@ class SlidingWindow(object):
         self.window_pos = [-1, -1]  # An invalid position as a start
         self.__set_window_size()
         self.step = [int(round(x * self.overlap)) for x in self.window_size]
-        self.window_reached_right = False
-        self.window_reached_bottom = False
 
     def __load_image(self):
         """
@@ -56,9 +54,8 @@ class SlidingWindow(object):
             if self.size <= 1:  # Size %
                 self.window_size = [int(round(x * self.size)) for x in self.image_size]
             else:  # Size absolute
-                # TODO Check if the image ratio is calculated correct
                 self.window_size = [int(round(self.size)),
-                                    int(round(self.size * (float(self.image_size[0]) / self.image_size[1])))]
+                                    int(round(self.size * (float(self.image_size[1]) / self.image_size[0])))]
         else:  # Use given ratio
             if self.size <= 1:  # Size %
                 x = self.image_size[0] * self.size
@@ -67,6 +64,16 @@ class SlidingWindow(object):
             else:  # Size absolute
                 self.window_size = [int(round(self.size)),
                                     int(round(self.size * self.ratio))]
+
+            self.window_reached_bottom = False
+
+        # Check, if the window size is larger than the image itself
+        self.window_reached_right = self.window_size[0] >= self.image_size[0]
+        self.window_reached_bottom = self.window_size[1] >= self.image_size[1]
+        if self.window_reached_right:
+            self.window_size[0] = self.image_size[0]
+        if self.window_reached_bottom:
+            self.window_size[1] = self.image_size[1]
 
     def __move_window(self):
         """
@@ -134,7 +141,7 @@ class SlidingWindow(object):
 
 def test():
     i = Image.Image('/home/leifb/Downloads/Schilder/Vorfahrt.png')
-    s = SlidingWindow(i, 0.5, 0, 0.5)
+    s = SlidingWindow(i, 400, 0, 0.8)
 
     it = 0
     for image, roi in s:
