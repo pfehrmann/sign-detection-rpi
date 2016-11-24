@@ -21,7 +21,6 @@ class SlidingWindow(object):
 
         # Copy constructor values
         self.image = image
-        self.size = width
         self.ratio = float(ratio)
         self.overlap = float(overlap)
 
@@ -29,7 +28,7 @@ class SlidingWindow(object):
         self.image_size = [self.image.shape[2], self.image.shape[1]]
 
         # initiate window box
-        self.window = Window.create(self.size, self.ratio, self.image_size[0], self.image_size[1])
+        self.window = Window.create(width, self.ratio, self.image_size[0], self.image_size[1])
         self.window.position = [-1, -1]  # An invalid position as a start
         self.step = [int(round(x * (1 - self.overlap))) for x in self.window.size]
 
