@@ -5,11 +5,11 @@ from sign_detection.model.Window import Window
 
 
 class SlidingWindow(object):
-    def __init__(self, image, size, ratio=1, overlap=0.85):
+    def __init__(self, image, width, ratio=1, overlap=0.85):
         """
         Creates a new sliding window. It can be used as an iterator.
         :param image: The image to use (the preprocessed image array).
-        :param size: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
+        :param width: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
         :param ratio: The ratio of the sliding window. If it is 0, the images ratio will be used.
         :param overlap: How much the sliding window will overlap after each step, as fractal.
         """
@@ -21,7 +21,7 @@ class SlidingWindow(object):
 
         # Copy constructor values
         self.image = image
-        self.size = size
+        self.size = width
         self.ratio = float(ratio)
         self.overlap = float(overlap)
 

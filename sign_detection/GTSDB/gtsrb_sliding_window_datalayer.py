@@ -132,7 +132,7 @@ class BatchLoader(object):
     def load_next_window(self):
         if (self._sliding_window == None):
             self._image = self.load_next_image()
-            self._sliding_window = SlidingWindow.SlidingWindow(image=self._image, size=0.01)
+            self._sliding_window = SlidingWindow.SlidingWindow(image=self._image, width=0.01)
 
         # Create a region of interest
         # ToDO Check if this is a method of the SlidingWindow class
