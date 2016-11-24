@@ -1,21 +1,25 @@
 import caffe
 import Image
 import skimage.io
-from PIL import Image as Pil
-
 from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 
 class SlidingWindow(object):
     def __init__(self, image, size, ratio=1, overlap=0.9):
         """
-        Creates a new sliding window.
-        :param image: The Image to use
+        Creates a new sliding window. It can be used as an iterator.
+        :param image: The Image to use (our Image.py class).
         :param size: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
         :param ratio: The ratio of the sliding window. If it is 0, the images ratio will be used.
         :param overlap: How much the sliding window will overlap after each step. 1 means  no overlapping, 0 no moving.
         """
+        """
+        Notes:
+        In this class, the 'window' is the current box of the sliding window, which is moved though out the iteration,
+        'image' always refers to the loaded image source.
+        """
 
+        # Copy constructor values
         self.image = image
         self.size = size
         self.ratio = float(ratio)
@@ -24,22 +28,21 @@ class SlidingWindow(object):
         # load the image
         self.__load_image()
 
-        # init window box
-        self.window_pos = [-1, -1]
+        # initiate window box
+        self.window_pos = [-1, -1]  # An invalid position as a start
         self.__set_window_size()
         self.step = [int(round(x * self.overlap)) for x in self.window_size]
         self.window_reached_right = False
         self.window_reached_bottom = False
 
-        print 'size: %s\nstep: %s' % (self.window_size, self.step)
-
     def __load_image(self):
         """
-        Loads the image into the memory using caffe and sets image_size.
+        Loads the image into the memory using Caffe and sets image_size. Caffe is using skimage, so you can use
+        skimage.io.imsave('image.png', image_array) to save an image for debuging purposes. An image can be cropped
+        by slicing the image array.
         """
 
         self.image_raw = caffe.io.load_image(self.image.path)
-        skimage.io.imsave('image/whole.png', self.image_raw)
         self.image_size = [self.image_raw.shape[1], self.image_raw.shape[0]]
 
     def __set_window_size(self):
@@ -66,19 +69,23 @@ class SlidingWindow(object):
                                     int(round(self.size * self.ratio))]
 
     def __move_window(self):
-        if self.window_pos[0] == -1 and self.window_pos[1] == -1:
-            self.window_pos[0] = 0
-            self.window_pos[1] = 1
+        """
+        Moves the window to the next position. If the next position has been reached, a StopIteration will be risen.
+        """
+        # Check for an 'invalid' position before the window has ever been moved.
+        if self.window_pos[0] < 0 and self.window_pos[1] < 0:
+            self.window_pos = [0, 0]
             return
 
-        # check, if the right has been reached
+        # Check, if the right side of the image has been reached
         if self.window_reached_right:
-            # If the border and bottom have been reached, the last image has been returned.
+            # If the right and bottom have been reached, the last image has been returned.
             if self.window_reached_bottom:
                 raise StopIteration()
-            else:
-                new_x = 0
-                self.window_reached_right = False
+
+            # Else, move back to the left and on step down
+            new_x = 0
+            self.window_reached_right = False
 
             # Find the next y coordinate and check if it exceeds the image
             new_y = self.window_pos[1] + self.step[1]
@@ -86,9 +93,10 @@ class SlidingWindow(object):
                 new_y = self.image_size[1] - self.window_size[1]
                 self.window_reached_bottom = True
 
-        else:
+        else:  # Right side has not been reached, move to the right
             new_x = self.window_pos[0] + self.step[0]
             new_y = self.window_pos[1]
+            # If the new x exceeds the image
             if new_x + self.window_size[0] >= self.image_size[0]:
                 new_x = self.image_size[0] - self.window_size[0]
                 self.window_reached_right = True
@@ -98,10 +106,17 @@ class SlidingWindow(object):
         self.window_pos[1] = new_y
 
     def __iter__(self):
+        """
+        Note: Python wants a object that can be used in a for loop to return a iterator when calling the __iter__().
+        Since the SlidingWindow is the iterator of itself, just return self.
+        """
         return self
 
     def next(self):
         """
+        Moves the window to the next position and returns the corresponding excerpt. The region of interest marks the
+        position of the excerpt within its source image.
+        :return An excerpt of the source image and a region of interest
         :returns: numpy.ndarray, RegionOfInterest
         """
         self.__move_window()
