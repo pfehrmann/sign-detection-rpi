@@ -2,7 +2,7 @@ average_loss: 25
 base_lr: 0.01
 display: 10
 gamma: 0.9
-iter_size: 4
+iter_size: 20
 lr_policy: "step"
 stepsize: 1500
 max_iter: 100000
@@ -12,6 +12,6 @@ snapshot_prefix: "snapshot"
 test_initialization: false
 test_interval: 250
 test_iter: 100
-test_net: "valnet.prototxt"
+test_net: "trainnet.prototxt"
 train_net: "trainnet.prototxt"
 weight_decay: 0.0005
