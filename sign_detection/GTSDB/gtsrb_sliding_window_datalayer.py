@@ -1,4 +1,6 @@
 # imports
+import random
+
 import scipy.misc
 import caffe
 
@@ -13,12 +15,12 @@ import csv
 from sign_detection.model import SlidingWindow
 from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
+from sign_detection.model.ScalingSlidingWindow import ScalingSlidingWindow
 
 
 class GtsdbSlidingWindowDataLayer(caffe.Layer):
     """
-    This is a simple synchronous datalayer for training a multilabel model on
-    PASCAL.
+    This is a layer for training the detection net. The net returns 1 if exactly one traffic sign is in a region of interest.
     """
 
     def setup(self, bottom, top):
@@ -36,8 +38,8 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         # once. Else, we'd have to do it in the reshape call.
         top[0].reshape(
             self.batch_size, 3, params['im_shape'][0], params['im_shape'][1])
-        # Note the 43 channels (because GTSDB has 43 classes.)
-        top[1].reshape(self.batch_size, 43)
+        # Note the 1 channel. We only want to heck, if we are intereseted in this region.
+        top[1].reshape(self.batch_size, 1)
 
         print_info("GtsrbSlidingWindowDataLayer", params)
 
@@ -47,11 +49,15 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         """
         for itt in range(self.batch_size):
             # Use the batch loader to load the next image.
-            im, multilabel = self.batch_loader.load_next_window()
+            im, label = self.batch_loader.load_next_window()
+
+            # throw away most of the images that contain no label to prevent overfitting
+            while label == 0 and random.randint(0, 4000) > 2:
+                im, label = self.batch_loader.load_next_window()
 
             # Add directly to the caffe data layer
             top[0].data[itt, ...] = im
-            top[1].data[itt, ...] = multilabel
+            top[1].data[itt, ...] = label
 
     def reshape(self, bottom, top):
         """
@@ -130,29 +136,25 @@ class BatchLoader(object):
             len(self.images))
 
     def load_next_window(self):
-        if (self._sliding_window == None):
-            self._image = self.load_next_image()
-            self._sliding_window = SlidingWindow.SlidingWindow(image=self._image, width=0.01)
-
-        # Create a region of interest
-        # ToDO Check if this is a method of the SlidingWindow class
-        x1 = self._sliding_window.window_pos[0]
-        x2 = self._sliding_window.window_pos[0] + self._sliding_window.window_size[0]
-        y1 = self._sliding_window.window_pos[1]
-        y2 = self._sliding_window.window_pos[1] + self._sliding_window.window_size[1]
-
-        current_window = RegionOfInterest(x1, y1, x2, y2, sign=0)
+        image_raw = None
+        current_window = None
+        try:
+            image_raw, current_window = self._sliding_window.next()
+        except:
+            self._image, image_data = self.load_next_image()
+            self._sliding_window = ScalingSlidingWindow(preprocess(image_data), 32, 1,
+                                                        zoom_factor=lambda x: 1 / (x + 1))
+            image_raw, current_window = self._sliding_window.next()
 
         # Find all regions of interest, that overlap to at lest 90% with this region of interest
         regions = self._image.get_overlapping_regions(current_window, 0.9)
 
         # Load and prepare ground truth
-        multilabel = np.zeros(43).astype(np.float32)
-        for roi in regions:
-            multilabel[int(roi.sign) - 1] = 1
+        label = np.zeros(1).astype(np.float32)
+        if len(regions) == 1:
+            label[0] = 1
 
-        # ToDo Catch exception of iter and instead return the next image.
-        return self._sliding_window.__iter__
+        return image_raw, label
 
     def load_next_image(self):
         """
@@ -167,10 +169,10 @@ class BatchLoader(object):
         image = self.images[self._cur]  # Get the image index
         image_data = np.asarray(Image.open(
             osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
-        image_data = scipy.misc.imresize(image_data, self.im_shape)  # resize
+        # image_data = scipy.misc.imresize(image_data, self.im_shape)  # resize
 
         self._cur += 1
-        return preprocess(image_data)
+        return image, image_data
 
 
 def preprocess(im):
@@ -184,6 +186,7 @@ def preprocess(im):
     im = im.transpose((2, 0, 1))
 
     return im
+
 
 def check_params(params):
     """
