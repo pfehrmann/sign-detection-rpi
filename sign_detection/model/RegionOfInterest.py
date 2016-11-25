@@ -10,11 +10,11 @@ class RegionOfInterest(object):
         :type sign: int
         """
 
-        self.__x1 = x1
-        self.__y1 = y1
+        self.__x1 = int(x1)
+        self.__y1 = int(y1)
 
-        self.__x2 = x2
-        self.__y2 = y2
+        self.__x2 = int(x2)
+        self.__y2 = int(y2)
 
         self.__sign = sign
 
