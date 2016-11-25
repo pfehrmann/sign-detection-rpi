@@ -2,7 +2,7 @@ import timeit
 import caffe
 
 
-def train(solver_name, gpu=True):
+def train(solver_name, gpu=True, use_solver=False, iters=100):
     if (gpu):
         caffe.set_device(0)
         caffe.set_mode_gpu()
@@ -10,17 +10,19 @@ def train(solver_name, gpu=True):
         caffe.set_mode_cpu()
 
     solver = caffe.get_solver(solver_name)
-    #    solver.solve()
 
     print "Starting solving"
-    for itt in range(6):
-        print "Step " + str(itt)
-        solver.step(100)
-        print 'itt:{:3d}'.format((itt + 1) * 100), 'accuracy:{0:.4f}'.format(check_accuracy(solver.test_nets[0], 50))
+    if use_solver:
+        solver.solve()
+    else:
+        for itt in range(iters):
+            print "Step " + str(itt)
+            solver.step(100)
+            print 'itt:{:3d}'.format((itt + 1) * 100), 'accuracy:{0:.4f}'.format(check_accuracy(solver.test_nets[0], 50))
+        accuracy = check_accuracy(solver.test_nets[0], 50)
+        print("Accuracy: {:.3f}".format(accuracy))
 
-    accuracy = check_accuracy(solver.test_nets[0], 50)
-
-    print("Accuracy: {:.3f}".format(accuracy))
+    solver.net.save("model.caffemodel")
 
 
 def hamming_distance(gt, est):
@@ -40,7 +42,7 @@ def check_accuracy(net, num_batches, batch_size=128):
 
 start = timeit.default_timer()
 
-train("solver.prototxt", True)
+train("solver.prototxt", True, iters=6)
 
 stop = timeit.default_timer()
 print("Start: " + str(start))
