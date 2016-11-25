@@ -27,6 +27,7 @@ class ScalingSlidingWindow(object):
         # Initiate misc attributes
         self.iteration = 0
         self.reached_max_zoom = False
+        self.factor_zero = False
 
         # Get the height and width of the image
         self.image_width = self.image.shape[2]
@@ -55,6 +56,8 @@ class ScalingSlidingWindow(object):
                 raise
             # Create new sliding window
             self.__zoom()
+            if self.factor_zero:
+                raise
             return self.slidingWindow.next()
 
     def __zoom(self):
@@ -72,6 +75,9 @@ class ScalingSlidingWindow(object):
         # Scale the image
         # 1. Find out how much
         factor = self.zoom(self.iteration)
+        if factor == 0:
+            self.factor_zero = True
+            return
         # 2. Transpose the image to correct format TODO maybe it should not be done every time...
         transposed = self.image.transpose(1, 2, 0)
         # 3. Create the transformer to scale
