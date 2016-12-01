@@ -100,13 +100,6 @@ layer {
   }
 }
 layer {
-  name: "accuracy"
-  type: "Accuracy"
-  bottom: "score"
-  bottom: "label"
-  top: "accuracy"
-}
-layer {
   name: "loss"
   type: "SoftmaxWithLoss"
   bottom: "score"
