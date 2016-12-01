@@ -1,18 +1,13 @@
-# imports
 import random
-
-import scipy.misc
 import caffe
 
 import numpy as np
 import os.path as osp
 
-from xml.dom import minidom
 from random import shuffle
 from PIL import Image
 import csv
 
-from sign_detection.model import SlidingWindow
 from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
 from sign_detection.model.ScalingSlidingWindow import ScalingSlidingWindow
@@ -38,8 +33,8 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         # once. Else, we'd have to do it in the reshape call.
         top[0].reshape(
             self.batch_size, 3, params['im_shape'][0], params['im_shape'][1])
-        # Note the 1 channel. We only want to heck, if we are intereseted in this region.
-        top[1].reshape(self.batch_size, 1)
+        # Use two values to determine, if a region contains a sign ([1]=1) or not ([0]=1)
+        top[1].reshape(self.batch_size, 2)
 
         print_info("GtsrbSlidingWindowDataLayer", params)
 
@@ -150,8 +145,10 @@ class BatchLoader(object):
         regions = self._image.get_overlapping_regions(current_window, 0.9)
 
         # Load and prepare ground truth
-        label = np.zeros(1).astype(np.float32)
+        label = np.zeros(2).astype(np.float32)
         if len(regions) == 1:
+            label[1] = 1
+        else:
             label[0] = 1
 
         return image_raw, label
