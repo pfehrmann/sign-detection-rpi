@@ -1,5 +1,5 @@
 import caffe.io
-import skimage.io
+from skimage.io import imsave
 
 from sign_detection.model.SlidingWindow import SlidingWindow
 from sign_detection.model.Window import Window
@@ -108,7 +108,7 @@ class ScalingSlidingWindow(object):
         :return The result properly scaled.
         :returns: numpy.ndarray, RegionOfInterest
         """
-        return image, roi.scale(1 / self.factor)
+        return image, roi.project(1 / self.factor)
 
 
 def test():
@@ -132,7 +132,7 @@ def test():
         print '%03d: x: %04d y: %04d w: %04d h: %04d)' % (it, roi.x1, roi.y1, roi.width, roi.height)
         transposed = image.transpose(1, 2, 0)
         scaled = transformer2.preprocess('data', transposed)
-        skimage.io.imsave('image/%s.bmp' % it, scaled)
+        imsave('image/%s.bmp' % it, scaled)
         it += 1
 
 test()

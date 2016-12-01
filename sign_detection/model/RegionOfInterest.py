@@ -1,6 +1,4 @@
-
 class RegionOfInterest(object):
-
     def __init__(self, x1, y1, x2, y2, sign):
         """
         :type x1: int
@@ -86,17 +84,21 @@ class RegionOfInterest(object):
     def height(self):
         return self.y2 - self.y1
 
-    def getOverlap(self, other):
+    def get_overlap(self, other):
         """
-        Calulated the overlap of two regions
+        Calculates the overlap of two regions
         :param other: The region of interest to intersect with
         :return: Returns a percentage of the overlap
 
         :type other: RegionOfInterest
         """
-        overlap = 0
         return 0.01 * max(0, min(self.x2, other.x2) - max(self.x1, other.x1)) \
-               * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
+                    * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
 
-    def scale(self, factor):
+    def project(self, factor):
+        """
+        Projects the region of interest onto a area by the given factor. Each coordinate will be scaled by it.
+        :param factor: The factor in which the project-to areas differs from the current.
+        :return: A new projected RegionOfInterest.
+        """
         return RegionOfInterest(self.x1 * factor, self.y1 * factor, self.x2 * factor, self.y2 * factor, self.sign)
