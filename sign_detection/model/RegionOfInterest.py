@@ -97,3 +97,6 @@ class RegionOfInterest(object):
         overlap = 0
         return 0.01 * max(0, min(self.x2, other.x2) - max(self.x1, other.x1)) \
                * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
+
+    def scale(self, factor):
+        return RegionOfInterest(self.x1 * factor, self.y1 * factor, self.x2 * factor, self.y2 * factor, self.sign)

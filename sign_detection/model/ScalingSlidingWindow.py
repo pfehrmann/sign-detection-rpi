@@ -27,7 +27,7 @@ class ScalingSlidingWindow(object):
         # Initiate misc attributes
         self.iteration = 0
         self.reached_max_zoom = False
-        self.factor_zero = False
+        self.factor_end = False
 
         # Get the height and width of the image
         self.image_width = self.image.shape[2]
@@ -46,19 +46,20 @@ class ScalingSlidingWindow(object):
     def next(self):
         """
         Calculates the next window except. A StopIteration will be risen if no next except is available.
-        :return An excerpt of the source image and a region of interest.
+        :return An excerpt of the source image and a region of interest, which points to the region of the excerpt in
+                the source image.
         :returns: numpy.ndarray, RegionOfInterest
         """
         try:
-            return self.slidingWindow.next()
+            return self.scale_back(self.slidingWindow.next())
         except StopIteration:
             if self.reached_max_zoom:
                 raise
             # Create new sliding window
             self.__zoom()
-            if self.factor_zero:
+            if self.factor_end:  # If the zoom factor is zero or smaller, the last image has been returned.
                 raise
-            return self.slidingWindow.next()
+            return self.scale_back(self.slidingWindow.next())
 
     def __zoom(self):
         """
@@ -74,15 +75,16 @@ class ScalingSlidingWindow(object):
 
         # Scale the image
         # 1. Find out how much
-        factor = self.zoom(self.iteration)
-        if factor == 0:
-            self.factor_zero = True
+        self.factor = self.zoom(self.iteration)
+        if self.factor <= 0:
+            self.factor_end = True
             return
+
         # 2. Transpose the image to correct format TODO maybe it should not be done every time...
         transposed = self.image.transpose(1, 2, 0)
         # 3. Create the transformer to scale
         transformer = caffe.io.Transformer(
-            {'data': (1, 3, int(round(self.image_height * factor)), int(round(self.image_width * factor)))}
+            {'data': (1, 3, int(round(self.image_height * self.factor)), int(round(self.image_width * self.factor)))}
         )
         # Set transposing back
         transformer.set_transpose('data', (2, 0, 1))
@@ -99,18 +101,27 @@ class ScalingSlidingWindow(object):
         # Up the iteration
         self.iteration += 1
 
+    def scale_back(self, (image, roi)):
+        """
+        Takes a SlidingWindow result and scales the RegionOfInterest so, that it represents a region in the source image
+        of this ScalingSlidingWindow.
+        :return The result properly scaled.
+        :returns: numpy.ndarray, RegionOfInterest
+        """
+        return image, roi.scale(1 / self.factor)
+
 
 def test():
-    i = caffe.io.load_image('/home/leifb/Downloads/Schilder/Vorfahrt.png')
+    i = caffe.io.load_image('/home/leifb/Downloads/Schilder/50.jpg')
 
     # load input and configure prepossessing
-    transformer = caffe.io.Transformer({'data': (1, 3, 412, 963)})
+    transformer = caffe.io.Transformer({'data': (1, 3, 1200, 1200)})
     transformer.set_transpose('data', (2, 0, 1))
     transformer.set_channel_swap('data', (2, 1, 0))
     transformer.set_raw_scale('data', 255.0)
     processed = transformer.preprocess('data', i)
 
-    ssc = ScalingSlidingWindow(processed, 192, 1, 0.85, lambda x: 1 - x * .2)
+    ssc = ScalingSlidingWindow(processed, .4, 1, 0.6, lambda x: 1 - x * .2)
 
     transformer2 = caffe.io.Transformer({'data': (1, 3, ssc.window.height, ssc.window.width)})
     # transformer2.set_channel_swap('data', (2, 1, 0))
@@ -118,10 +129,10 @@ def test():
 
     it = 0
     for image, roi in ssc:
-        print 'got image nr %s' % it
+        print '%03d: x: %04d y: %04d w: %04d h: %04d)' % (it, roi.x1, roi.y1, roi.width, roi.height)
         transposed = image.transpose(1, 2, 0)
         scaled = transformer2.preprocess('data', transposed)
         skimage.io.imsave('image/%s.bmp' % it, scaled)
         it += 1
 
-# test()
+test()
