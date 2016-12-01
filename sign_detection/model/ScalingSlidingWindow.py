@@ -1,6 +1,5 @@
 import caffe.io
 from skimage.io import imsave
-import timeit
 import warnings
 
 from sign_detection.model.SlidingWindow import SlidingWindow
