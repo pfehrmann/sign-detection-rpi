@@ -51,6 +51,6 @@ class IdentifiedImage(Image):
 
         regions = []
         for roi in self.region_of_interests:
-            if roi.getOverlap(region_of_interest) > overlap:
+            if roi.get_overlap(region_of_interest) > overlap:
                 regions.append(roi)
         return regions

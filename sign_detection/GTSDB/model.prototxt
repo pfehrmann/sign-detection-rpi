@@ -1,13 +1,9 @@
-layer {
-    name: "data"
-    top: "data"
-    top: "label"
-    type: "Python"
-    python_param {
-        module: "gtsrb_sliding_window_datalayer"
-        layer: "GtsdbSlidingWindowDataLayer"
-        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [32, 32], \'split\': \'train\', \'batch_size\': 4}"
-    }
+input: "data"
+input_shape {
+  dim: 1
+  dim: 3
+  dim: 32
+  dim: 32
 }
 layer {
   name: "conv1"
@@ -101,8 +97,7 @@ layer {
 }
 layer {
   name: "loss"
-  type: "SoftmaxWithLoss"
+  type: "Softmax"
   bottom: "score"
-  bottom: "label"
   top: "loss"
 }
