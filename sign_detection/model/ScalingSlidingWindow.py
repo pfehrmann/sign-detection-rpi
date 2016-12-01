@@ -1,5 +1,7 @@
 import caffe.io
 from skimage.io import imsave
+import timeit
+import warnings
 
 from sign_detection.model.SlidingWindow import SlidingWindow
 from sign_detection.model.Window import Window
@@ -9,7 +11,7 @@ class ScalingSlidingWindow(object):
     def __init__(self, image, width, ratio, overlap=0.85, zoom_factor=lambda x: 1 - x * .1):
         """
         Creates a new scaling sliding window. It can be used as an iterator.
-        :param image: The image to use (the preprocessed image array).
+        :param image: The image to use. For best performance, only perform raw_scale on the loaded image.
         :param width: The vertical size of the sliding window in pixels or in percentage,  if <= 1.
         :param ratio: The ratio of the sliding window. If it is 0, the images ratio will be used.
         :param overlap: How much the sliding window will overlap after each step, as fractal.
@@ -19,7 +21,7 @@ class ScalingSlidingWindow(object):
         """
 
         # Copy the constructor arguments
-        self.image = image
+        self.image = ScalingSlidingWindow.parse_image(image)
         self.ratio = ratio
         self.overlap = overlap
         self.zoom = zoom_factor
@@ -30,8 +32,8 @@ class ScalingSlidingWindow(object):
         self.factor_end = False
 
         # Get the height and width of the image
-        self.image_width = self.image.shape[2]
-        self.image_height = self.image.shape[1]
+        self.image_width = self.image.shape[1]
+        self.image_height = self.image.shape[0]
 
         # Create Window to get the sliding box size
         self.window = Window.create(width, self.ratio, self.image_height, self.image_width)
@@ -80,16 +82,14 @@ class ScalingSlidingWindow(object):
             self.factor_end = True
             return
 
-        # 2. Transpose the image to correct format TODO maybe it should not be done every time...
-        transposed = self.image.transpose(1, 2, 0)
         # 3. Create the transformer to scale
         transformer = caffe.io.Transformer(
             {'data': (1, 3, int(round(self.image_height * self.factor)), int(round(self.image_width * self.factor)))}
         )
-        # Set transposing back
+        # Set transposing to what the sliding window needs
         transformer.set_transpose('data', (2, 0, 1))
         # 5. Finally, scale
-        scaled = transformer.preprocess('data', transposed)
+        scaled = transformer.preprocess('data', self.image)
 
         # Create the new sliding window
         self.slidingWindow = SlidingWindow(scaled, self.window.width, self.ratio, self.overlap)
@@ -110,21 +110,28 @@ class ScalingSlidingWindow(object):
         """
         return image, roi.project(1 / self.factor)
 
+    @staticmethod
+    def parse_image(image):
+        # Check, if the image has been transposed
+        if image.shape[0] == 3:
+            # 2. Transpose the image to correct format
+            warnings.warn("A scaling window received an already transposed image.")
+            return image.transpose(1, 2, 0)
+        return image
+
 
 def test():
+    # Load the image
     i = caffe.io.load_image('/home/leifb/Downloads/Schilder/50.jpg')
 
     # load input and configure prepossessing
     transformer = caffe.io.Transformer({'data': (1, 3, 1200, 1200)})
-    transformer.set_transpose('data', (2, 0, 1))
-    transformer.set_channel_swap('data', (2, 1, 0))
     transformer.set_raw_scale('data', 255.0)
     processed = transformer.preprocess('data', i)
 
     ssc = ScalingSlidingWindow(processed, .4, 1, 0.6, lambda x: 1 - x * .2)
 
     transformer2 = caffe.io.Transformer({'data': (1, 3, ssc.window.height, ssc.window.width)})
-    # transformer2.set_channel_swap('data', (2, 1, 0))
     transformer2.set_raw_scale('data', 1.0 / 255.0)
 
     it = 0
