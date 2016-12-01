@@ -6,7 +6,7 @@ layer {
     python_param {
         module: "gtsrb_sliding_window_datalayer"
         layer: "GtsdbSlidingWindowDataLayer"
-        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [1360, 800], \'split\': \'train\', \'batch_size\': 4}"
+        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [32, 32], \'split\': \'train\', \'batch_size\': 4}"
     }
 }
 layer {
@@ -15,11 +15,11 @@ layer {
   bottom: "data"
   top: "conv1"
   convolution_param {
-    num_output: 96
+    num_output: 16
     pad: 0
-    kernel_size: 23
+    kernel_size: 5
     group: 1
-    stride: 4
+    stride: 1
   }
 }
 layer {
@@ -29,28 +29,9 @@ layer {
   top: "conv1"
 }
 layer {
-  name: "conv1.1"
-  type: "Convolution"
-  bottom: "conv1"
-  top: "conv1.1"
-  convolution_param {
-    num_output: 96
-    pad: 0
-    kernel_size: 23
-    group: 1
-    stride: 4
-  }
-}
-layer {
-  name: "relu1"
-  type: "ReLU"
-  bottom: "conv1.1"
-  top: "conv1.1"
-}
-layer {
   name: "pool1"
   type: "Pooling"
-  bottom: "conv1.1"
+  bottom: "conv1"
   top: "pool1"
   pooling_param {
     pool: MAX
@@ -64,7 +45,7 @@ layer {
   bottom: "pool1"
   top: "conv2"
   convolution_param {
-    num_output: 256
+    num_output: 16
     pad: 2
     kernel_size: 5
     group: 2
@@ -89,112 +70,12 @@ layer {
   }
 }
 layer {
-  name: "norm2"
-  type: "LRN"
-  bottom: "pool2"
-  top: "norm2"
-  lrn_param {
-    local_size: 5
-    alpha: 0.0001
-    beta: 0.75
-  }
-}
-layer {
-  name: "conv3"
-  type: "Convolution"
-  bottom: "norm2"
-  top: "conv3"
-  convolution_param {
-    num_output: 384
-    pad: 1
-    kernel_size: 3
-    group: 1
-    stride: 1
-  }
-}
-layer {
-  name: "relu3"
-  type: "ReLU"
-  bottom: "conv3"
-  top: "conv3"
-}
-layer {
-  name: "conv4"
-  type: "Convolution"
-  bottom: "conv3"
-  top: "conv4"
-  convolution_param {
-    num_output: 384
-    pad: 1
-    kernel_size: 3
-    group: 2
-    stride: 1
-  }
-}
-layer {
-  name: "relu4"
-  type: "ReLU"
-  bottom: "conv4"
-  top: "conv4"
-}
-layer {
-  name: "conv5"
-  type: "Convolution"
-  bottom: "conv4"
-  top: "conv5"
-  convolution_param {
-    num_output: 256
-    pad: 1
-    kernel_size: 3
-    group: 2
-    stride: 1
-  }
-}
-layer {
-  name: "relu5"
-  type: "ReLU"
-  bottom: "conv5"
-  top: "conv5"
-}
-layer {
-  name: "pool5"
-  type: "Pooling"
-  bottom: "conv5"
-  top: "pool5"
-  pooling_param {
-    pool: MAX
-    kernel_size: 3
-    stride: 2
-  }
-}
-layer {
-  name: "fc6"
-  type: "InnerProduct"
-  bottom: "pool5"
-  top: "fc6"
-  inner_product_param {
-    num_output: 4096
-  }
-}
-layer {
-  name: "relu6"
-  type: "ReLU"
-  bottom: "fc6"
-  top: "fc6"
-}
-layer {
-  name: "drop6"
-  type: "Dropout"
-  bottom: "fc6"
-  top: "fc6"
-}
-layer {
   name: "fc7"
   type: "InnerProduct"
-  bottom: "fc6"
+  bottom: "pool2"
   top: "fc7"
   inner_product_param {
-    num_output: 4096
+    num_output: 128
   }
 }
 layer {
@@ -215,12 +96,19 @@ layer {
   bottom: "fc7"
   top: "score"
   inner_product_param {
-    num_output: 43
+    num_output: 2
   }
 }
 layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "score"
+  bottom: "label"
+  top: "accuracy"
+}
+layer {
   name: "loss"
-  type: "SigmoidCrossEntropyLoss"
+  type: "SoftmaxWithLoss"
   bottom: "score"
   bottom: "label"
   top: "loss"

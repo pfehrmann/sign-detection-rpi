@@ -12,6 +12,6 @@ snapshot_prefix: "snapshot"
 test_initialization: false
 test_interval: 250
 test_iter: 100
-test_net: "trainnet.prototxt"
+test_net: "valnet.prototxt"
 train_net: "trainnet.prototxt"
 weight_decay: 0.0005
