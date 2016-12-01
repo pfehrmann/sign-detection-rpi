@@ -16,11 +16,14 @@ def load_net(model, weights):
     return net, transformer
 
 
+def supply_image(image_array, net, transformer):
+    net.blobs['data'].data[...] = transformer.preprocess('data', image_array)
+    return net
+
 def load_image(image_path, net, transformer):
     # load the image in the data layer
     im = caffe.io.load_image(image_path)
-    net.blobs['data'].data[...] = transformer.preprocess('data', im)
-    return net
+    return supply_image(im, net, transformer)
 
 
 def compute(net):
@@ -29,7 +32,7 @@ def compute(net):
 
     # predicted predicted class
     class_index = out['loss'].argmax()
-    return class_index
+    return class_index, out['loss'][0][class_index]
 
 
 def get_name_from_category(category):
@@ -111,4 +114,4 @@ def parse_arguments():
     print "Category: " + str(category) + ": " + get_name_from_category(category)
 
 
-parse_arguments()
+#parse_arguments()
