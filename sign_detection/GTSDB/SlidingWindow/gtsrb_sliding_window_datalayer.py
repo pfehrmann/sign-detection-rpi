@@ -28,16 +28,12 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         self.batch_size = params['batch_size']
         self.batch_loader = BatchLoader(params, None)
 
-        # === reshape tops ===
         # since we use a fixed input image size, we can shape the data layer
         # once. Else, we'd have to do it in the reshape call.
-        top[0].reshape(
-            self.batch_size, 3, params['im_shape'][0], params['im_shape'][1])
+        top[0].reshape(self.batch_size, 3, params['window_size'], params['window_size'])
 
         # Use two values to determine, if a region contains a sign ([1]=1) or not ([0]=1)
         top[1].reshape(self.batch_size, 2)
-
-        print_info("GtsrbSlidingWindowDataLayer", params)
 
     def forward(self, bottom, top):
         """
@@ -78,7 +74,7 @@ class BatchLoader(object):
         self.result = result
         self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
-        self.im_shape = params['im_shape']
+        self.im_shape = params['window_size']
         self._cur = 0
         self._sliding_window = None
         self._image = None
@@ -213,7 +209,7 @@ def check_params(params):
     A utility function to check the parameters for the data layers.
     """
 
-    required = ['batch_size', 'gtsdb_root', 'im_shape']
+    required = ['batch_size', 'gtsdb_root', 'window_size']
     for r in required:
         assert r in params.keys(), 'Params must include {}'.format(r)
 
@@ -222,7 +218,7 @@ def print_info(name, params):
     """
     Output some info regarding the class
     """
-    print "{} initialized with bs: {}, im_shape: {}.".format(
+    print "{} initialized with bs: {}, window_size: {}.".format(
         name,
         params['batch_size'],
-        params['im_shape'])
+        params['window_size'])
