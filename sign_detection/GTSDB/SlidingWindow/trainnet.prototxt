@@ -6,7 +6,7 @@ layer {
     python_param {
         module: "gtsrb_sliding_window_datalayer"
         layer: "GtsdbSlidingWindowDataLayer"
-        param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'window_size\': 64, \'batch_size\': 2}"
+        param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'window_size\': 64, \'batch_size\': 64}"
     }
 }
 layer {
@@ -56,6 +56,13 @@ layer {
   inner_product_param {
     num_output: 2
   }
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "score"
+  bottom: "label"
+  top: "accuracy"
 }
 layer {
   name: "loss"
