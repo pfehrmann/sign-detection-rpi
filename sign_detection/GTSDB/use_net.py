@@ -40,7 +40,7 @@ def identify_regions(model, weights, image_path):
 
     rois = []
     i = 0
-    window = ScalingSlidingWindow(processed, 64, 1, 0.85, lambda x: 1/(x+1))
+    window = ScalingSlidingWindow(processed, 64, 1, 0.85, lambda x: 1/(x+2))
     for image, roi in window:
         net.blobs['data'].data[...] = image
         out = net.forward()

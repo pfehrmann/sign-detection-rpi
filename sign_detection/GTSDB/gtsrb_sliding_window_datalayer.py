@@ -46,28 +46,10 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         regions = []
         for itt in range(self.batch_size):
             # Use the batch loader to load the next image.
-            im, label = self.batch_loader.load_next_window()
+            im, label = self.batch_loader.next_window(150000, 0.33)
 
-            # throw away most of the images that contain no label to prevent overfitting
-            it = 0
-            while label[1] == 0 and random.randint(0, 500) > 2:
-                it += 1
-                im, label = self.batch_loader.load_next_window()
-            #print str(label)+ ", " + str(it)
-            regions.append((im, label))
-
-        random.shuffle(regions)
-        a = 0
-        b = 0
-        for itt in range(self.batch_size):
-            # Add directly to the caffe data layer
             top[0].data[itt, ...] = regions[itt][0]
             top[1].data[itt, ...] = regions[itt][1]
-            if regions[itt][1][0] > 0.1:
-                a += 1
-            if regions[itt][1][1] > 0.1:
-                b += 1
-        print "ones: " + str(b) + ", zeroes: " + str(a)
 
     def reshape(self, bottom, top):
         """
@@ -145,7 +127,33 @@ class BatchLoader(object):
         print "BatchLoader initialized with {} images".format(
             len(self.images))
 
-    def load_next_window(self):
+    def next_window(self, num, fraction):
+        try:
+            return self._windows.pop()
+        except:
+            self.collect_windows(num, fraction)
+            return self._windows.pop()
+
+    def collect_windows(self, num, fraction):
+        signs = []
+        no_signs = []
+
+        for i in range(0,num, 1):
+            image, label = self.__load_next_window()
+            if label[0] == 1:
+                no_signs.append((image, label))
+            else:
+                signs.append((image, label))
+
+        no_sign_count = len(signs)*fraction
+        random.shuffle(no_signs)
+        result = []
+        result.extend(signs)
+        result.extend(no_signs[0:int(no_sign_count)])
+        random.shuffle(result)
+        self._windows = result
+
+    def __load_next_window(self):
         image_raw = None
         current_window = None
         try:
