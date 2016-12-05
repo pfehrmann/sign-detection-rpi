@@ -1,12 +1,12 @@
 import caffe
-import numpy as np
 
 from sign_detection.GTSDB.SlidingWindow.batchloader import BatchLoader
 
 
 class GtsdbSlidingWindowDataLayer(caffe.Layer):
     """
-    This is a layer for training the detection net. The net returns 1 if exactly one traffic sign is in a region of interest.
+    This is a layer for training the detection net. The net returns 1 if exactly one traffic sign is in a
+    region of interest.
     """
 
     def setup(self, bottom, top):
@@ -49,19 +49,6 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         These layers does not back propagate
         """
         pass
-
-
-def preprocess(im):
-    """
-    preprocess() emulate the pre-processing occuring in the vgg16 caffe
-    prototxt.
-    """
-
-    im = np.float32(im)
-    #im = im[:, :, ::-1]  # change to BGR
-    #im = im.transpose((2, 0, 1))
-
-    return im
 
 
 def check_params(params):
