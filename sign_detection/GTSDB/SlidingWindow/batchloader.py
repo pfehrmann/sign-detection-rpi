@@ -97,43 +97,43 @@ class BatchLoader(object):
         image = self.images[self._cur]  # Get the image index
         image_data = np.asarray(Image.open(
             osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
-        # image_data = scipy.misc.imresize(image_data, self.im_shape)  # resize
 
         self._cur += 1
         return image, image_data
 
+
 def get_images_and_regions(gtsdb_root):
     # get list of image indexes.
-    list_file = 'gt.txt'
     duplicated_images = []  # images
-    gtFile = open(gtsdb_root + "/" + list_file)  # annotations file
-    gtReader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
-    # loop over all images in current annotations file
-    for row in gtReader:
-        path_to_image = gtsdb_root + "/" + row[0]
+    with open(gtsdb_root + "/gt.txt") as gtFile:
+        gtReader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
+        # loop over all images in current annotations file
+        for row in gtReader:
+            path_to_image = gtsdb_root + "/" + row[0]
 
-        # find size of image
-        roi = [RegionOfInterest(row[1], row[2], row[3], row[4], row[5])]
-        image = IdentifiedImage(path_to_image, roi)
-        duplicated_images.append(image)
-    gtFile.close()
+            # find size of image
+            roi = [RegionOfInterest(row[1], row[2], row[3], row[4], row[5])]
+            image = IdentifiedImage(path_to_image, roi)
+            duplicated_images.append(image)
+
     # fill in all the images without a region of interest
+    # there are images ranging from 00000 to 00599
     for i in range(0, 599):
         found = False
         for image in duplicated_images:
-            if (str(i) in image.path):
+            if str(i) in image.path:
                 found = True
                 break
 
-        if (not found):
+        if not found:
             duplicated_images.append(IdentifiedImage(gtsdb_root + '/' + format(i, '05d') + '.ppm', []))
 
-    # loop over all images to make sure, that no duplicat file path exists
+    # loop over all images to make sure, that no duplicate file path exists
     images = []
     last_image = duplicated_images[0]
     images.append(last_image)
     for image in duplicated_images[0:]:
-        if (last_image.path == image.path):
+        if last_image.path == image.path:
             rois = last_image.region_of_interests
             rois.extend(image.region_of_interests)
             last_image.region_of_interests = rois
