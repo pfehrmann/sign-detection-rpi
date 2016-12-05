@@ -20,7 +20,7 @@ class BatchLoader(object):
     :ivar _image: IdentifiedImage
     """
 
-    def __init__(self, params, result):
+    def __init__(self, params, result, num, fraction):
         self.result = result
         self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
@@ -28,6 +28,8 @@ class BatchLoader(object):
         self._cur = 0
         self._sliding_window = None
         self._image = None
+        self.num = num
+        self.fraction = fraction
 
         # get list of image indexes.
         list_file = 'gt.txt'
@@ -80,18 +82,18 @@ class BatchLoader(object):
             self.collect_windows(num, fraction)
             return self._windows.pop()
 
-    def collect_windows(self, num, fraction):
+    def collect_windows(self):
         signs = []
         no_signs = []
 
-        for i in range(0,num, 1):
+        for i in range(0,self.num, 1):
             image, label = self.__load_next_window()
             if label[0] == 1:
                 no_signs.append((image, label))
             else:
                 signs.append((image, label))
 
-        no_sign_count = len(signs)*fraction
+        no_sign_count = len(signs)*self.fraction
         random.shuffle(no_signs)
         result = []
         result.extend(signs)
