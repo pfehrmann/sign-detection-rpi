@@ -6,7 +6,7 @@ layer {
     python_param {
         module: "gtsrb_sliding_window_datalayer"
         layer: "GtsdbSlidingWindowDataLayer"
-        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [64, 64], \'split\': \'train\', \'batch_size\': 8}"
+        param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'im_shape\': [64, 64], \'split\': \'train\', \'batch_size\': 8}"
     }
 }
 layer {
