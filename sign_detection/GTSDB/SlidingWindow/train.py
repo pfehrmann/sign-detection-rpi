@@ -66,4 +66,4 @@ def parse_arguments():
     print("Time:  " + str(stop - start))
 
 #parse_arguments()
-train("solver.prototxt", iters=6)
+train("Mini_net_solver.prototxt", iters=6)

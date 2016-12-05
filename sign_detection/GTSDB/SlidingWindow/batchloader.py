@@ -76,10 +76,8 @@ class BatchLoader(object):
         regions = self._image.get_overlapping_regions(current_window, 0.85)
 
         # Load and prepare ground truth
-        label = np.zeros(2).astype(np.float32)
+        label = np.zeros(1).astype(np.float32)
         if len(regions) == 1:
-            label[1] = 1
-        else:
             label[0] = 1
 
         return image_raw, label
