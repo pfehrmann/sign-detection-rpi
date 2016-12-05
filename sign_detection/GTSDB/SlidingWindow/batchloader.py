@@ -30,46 +30,7 @@ class BatchLoader(object):
         self.num = num
         self.fraction = fraction
 
-        # get list of image indexes.
-        list_file = 'gt.txt'
-
-        self.duplicated_images = []  # images
-        gtFile = open(self.gtsdb_root + "/" + list_file)  # annotations file
-        gtReader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
-
-        # loop over all images in current annotations file
-        for row in gtReader:
-            path_to_image = self.gtsdb_root + "/" + row[0]
-
-            # find size of image
-            roi = [RegionOfInterest(row[1], row[2], row[3], row[4], row[5])]
-            image = IdentifiedImage(path_to_image, roi)
-            self.duplicated_images.append(image)
-        gtFile.close()
-
-        # fill in all the images without a region of interest
-        for i in range(0, 599):
-            found = False
-            for image in self.duplicated_images:
-                if (str(i) in image.path):
-                    found = True
-                    break
-
-            if (not found):
-                self.duplicated_images.append(IdentifiedImage(self.gtsdb_root + '/' + format(i, '05d') + '.ppm', []))
-
-        # loop over all images to make sure, that no duplicat file path exists
-        self.images = []
-        last_image = self.duplicated_images[0]
-        self.images.append(last_image)
-        for image in self.duplicated_images[0:]:
-            if (last_image.path == image.path):
-                rois = last_image.region_of_interests
-                rois.extend(image.region_of_interests)
-                last_image.region_of_interests = rois
-            else:
-                last_image = image
-                self.images.append(last_image)
+        self.images = get_images_and_regions(self.gtsdb_root)
 
         print "BatchLoader initialized with {} images".format(
             len(self.images))
@@ -140,3 +101,44 @@ class BatchLoader(object):
 
         self._cur += 1
         return image, image_data
+
+def get_images_and_regions(gtsdb_root):
+    # get list of image indexes.
+    list_file = 'gt.txt'
+    duplicated_images = []  # images
+    gtFile = open(gtsdb_root + "/" + list_file)  # annotations file
+    gtReader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
+    # loop over all images in current annotations file
+    for row in gtReader:
+        path_to_image = gtsdb_root + "/" + row[0]
+
+        # find size of image
+        roi = [RegionOfInterest(row[1], row[2], row[3], row[4], row[5])]
+        image = IdentifiedImage(path_to_image, roi)
+        duplicated_images.append(image)
+    gtFile.close()
+    # fill in all the images without a region of interest
+    for i in range(0, 599):
+        found = False
+        for image in duplicated_images:
+            if (str(i) in image.path):
+                found = True
+                break
+
+        if (not found):
+            duplicated_images.append(IdentifiedImage(gtsdb_root + '/' + format(i, '05d') + '.ppm', []))
+
+    # loop over all images to make sure, that no duplicat file path exists
+    images = []
+    last_image = duplicated_images[0]
+    images.append(last_image)
+    for image in duplicated_images[0:]:
+        if (last_image.path == image.path):
+            rois = last_image.region_of_interests
+            rois.extend(image.region_of_interests)
+            last_image.region_of_interests = rois
+        else:
+            last_image = image
+            images.append(last_image)
+
+    return images
