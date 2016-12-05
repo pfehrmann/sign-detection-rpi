@@ -20,8 +20,7 @@ class BatchLoader(object):
     :ivar _image: IdentifiedImage
     """
 
-    def __init__(self, params, result, num, fraction):
-        #self.result = result
+    def __init__(self, params, num, fraction):
         self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
         self.im_shape = params['window_size']

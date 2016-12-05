@@ -17,7 +17,7 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         check_params(params)
 
         self.batch_size = params['batch_size']
-        self.batch_loader = BatchLoader(params, None, 150000, 0.33)
+        self.batch_loader = BatchLoader(params, 150000, 0.33)
 
         # since we use a fixed input image size, we can shape the data layer
         # once. Else, we'd have to do it in the reshape call.
