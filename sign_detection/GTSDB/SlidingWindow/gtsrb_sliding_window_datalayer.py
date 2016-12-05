@@ -212,13 +212,3 @@ def check_params(params):
     required = ['batch_size', 'gtsdb_root', 'window_size']
     for r in required:
         assert r in params.keys(), 'Params must include {}'.format(r)
-
-
-def print_info(name, params):
-    """
-    Output some info regarding the class
-    """
-    print "{} initialized with bs: {}, window_size: {}.".format(
-        name,
-        params['batch_size'],
-        params['window_size'])
