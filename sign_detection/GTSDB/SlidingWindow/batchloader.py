@@ -21,7 +21,7 @@ class BatchLoader(object):
     """
 
     def __init__(self, params, result, num, fraction):
-        self.result = result
+        #self.result = result
         self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
         self.im_shape = params['window_size']
@@ -75,11 +75,11 @@ class BatchLoader(object):
         print "BatchLoader initialized with {} images".format(
             len(self.images))
 
-    def next_window(self, num, fraction):
+    def next_window(self):
         try:
             return self._windows.pop()
         except:
-            self.collect_windows(num, fraction)
+            self.collect_windows()
             return self._windows.pop()
 
     def collect_windows(self):
