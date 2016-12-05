@@ -6,7 +6,7 @@ layer {
     python_param {
         module: "gtsrb_sliding_window_datalayer"
         layer: "GtsdbSlidingWindowDataLayer"
-        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [32, 32], \'split\': \'train\', \'batch_size\': 4}"
+        param_str: "{\'gtsdb_root\': \'C:/Users/phili/Downloads/FullIJCNN2013/FullIJCNN2013', \'im_shape\': [64, 64], \'split\': \'train\', \'batch_size\': 64}"
     }
 }
 layer {
@@ -40,55 +40,13 @@ layer {
   }
 }
 layer {
-  name: "conv2"
-  type: "Convolution"
-  bottom: "pool1"
-  top: "conv2"
-  convolution_param {
-    num_output: 16
-    pad: 2
-    kernel_size: 5
-    group: 2
-    stride: 1
-  }
-}
-layer {
-  name: "relu2"
-  type: "ReLU"
-  bottom: "conv2"
-  top: "conv2"
-}
-layer {
-  name: "pool2"
-  type: "Pooling"
-  bottom: "conv2"
-  top: "pool2"
-  pooling_param {
-    pool: MAX
-    kernel_size: 3
-    stride: 2
-  }
-}
-layer {
   name: "fc7"
   type: "InnerProduct"
-  bottom: "pool2"
+  bottom: "pool1"
   top: "fc7"
   inner_product_param {
     num_output: 128
   }
-}
-layer {
-  name: "relu7"
-  type: "ReLU"
-  bottom: "fc7"
-  top: "fc7"
-}
-layer {
-  name: "drop7"
-  type: "Dropout"
-  bottom: "fc7"
-  top: "fc7"
 }
 layer {
   name: "score"
@@ -101,7 +59,7 @@ layer {
 }
 layer {
   name: "loss"
-  type: "SoftmaxWithLoss"
+  type: "SigmoidCrossEntropyLoss"
   bottom: "score"
   bottom: "label"
   top: "loss"

@@ -1,49 +1,69 @@
+import argparse
 import timeit
 import caffe
 
 
 def train(solver_name, gpu=True, use_solver=False, iters=100):
+    """
+    Train a given solver using either the solver options or custom ones. Either the GPU or CPU can be used for training.
+    :param solver_name: The name (and potentially also the path) of the solver file.
+    :param gpu: Use the GPU?
+    :param use_solver: Use all the settings from the solver?
+    :param iters: The number of iterations. Per iteration 100 steps are performed. This setting is ignored if use_solver == True
+    :return: None
+    :returns: None
+
+    :type solver_name: str
+    :type gpu: bool
+    :type use_solver: bool
+    :type iters: int
+    """
+
+    # Set the correct device for solving
     if (gpu):
         caffe.set_device(0)
         caffe.set_mode_gpu()
     else:
         caffe.set_mode_cpu()
 
+    # Initialize the solver
     solver = caffe.get_solver(solver_name)
 
     print "Starting solving"
     if use_solver:
+        # Use the solver settings
         solver.solve()
+
     else:
+        # Use the custom settings
         for itt in range(iters):
             print "Step " + str(itt)
             solver.step(100)
-            print 'itt:{:3d}'.format((itt + 1) * 100), 'accuracy:{0:.4f}'.format(check_accuracy(solver.test_nets[0], 50))
-        accuracy = check_accuracy(solver.test_nets[0], 50)
-        print("Accuracy: {:.3f}".format(accuracy))
 
+    # Save the model
     solver.net.save("model.caffemodel")
 
 
-def hamming_distance(gt, est):
-    return sum([1 for (g, e) in zip(gt, est) if g == e]) / float(len(gt))
+def parse_arguments():
 
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Train a net to detect regions in images')
+    parser.add_argument('solver', type=str, help='The solver file to use')
+    parser.add_argument('-g', '--gpu', type=bool, default=True, help='Train on GPU?')
+    parser.add_argument('-s', '--usesolver', type=bool, default=False, help='Use only the settings from the solver?')
+    parser.add_argument('-i', '--iterations', type=int, default=6, help='The number of iterations (ignored, when using solvers settings)')
 
-def check_accuracy(net, num_batches, batch_size=128):
-    acc = 0.0
-    for t in range(num_batches):
-        net.forward()
-        gts = net.blobs['label'].data
-        ests = net.blobs['score'].data > 0
-        for gt, est in zip(gts, ests):  # for each ground truth and estimated label vector
-            acc += hamming_distance(gt, est)
-    return acc / (num_batches * batch_size)
+    # Read the input arguments
+    args = parser.parse_args()
 
+    # start timing
+    start = timeit.default_timer()
 
-start = timeit.default_timer()
+    train(args.solver, args.gpu, args.usesolver, args.iterations)
 
-train("solver.prototxt", True, iters=6)
+    # stop timing and print results
+    stop = timeit.default_timer()
+    print("Time:  " + str(stop - start))
 
-stop = timeit.default_timer()
-print("Start: " + str(start))
-print("Time:  " + str(stop - start))
+#parse_arguments()
+train("solver.prototxt", iters=6)

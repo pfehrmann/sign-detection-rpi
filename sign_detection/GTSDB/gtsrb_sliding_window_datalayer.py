@@ -33,6 +33,7 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         # once. Else, we'd have to do it in the reshape call.
         top[0].reshape(
             self.batch_size, 3, params['im_shape'][0], params['im_shape'][1])
+
         # Use two values to determine, if a region contains a sign ([1]=1) or not ([0]=1)
         top[1].reshape(self.batch_size, 2)
 
@@ -42,17 +43,31 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         """
         Load data.
         """
+        regions = []
         for itt in range(self.batch_size):
             # Use the batch loader to load the next image.
             im, label = self.batch_loader.load_next_window()
 
             # throw away most of the images that contain no label to prevent overfitting
-            while label == 0 and random.randint(0, 4000) > 2:
+            it = 0
+            while label[1] == 0 and random.randint(0, 500) > 2:
+                it += 1
                 im, label = self.batch_loader.load_next_window()
+            #print str(label)+ ", " + str(it)
+            regions.append((im, label))
 
+        random.shuffle(regions)
+        a = 0
+        b = 0
+        for itt in range(self.batch_size):
             # Add directly to the caffe data layer
-            top[0].data[itt, ...] = im
-            top[1].data[itt, ...] = label
+            top[0].data[itt, ...] = regions[itt][0]
+            top[1].data[itt, ...] = regions[itt][1]
+            if regions[itt][1][0] > 0.1:
+                a += 1
+            if regions[itt][1][1] > 0.1:
+                b += 1
+        print "ones: " + str(b) + ", zeroes: " + str(a)
 
     def reshape(self, bottom, top):
         """
@@ -137,12 +152,12 @@ class BatchLoader(object):
             image_raw, current_window = self._sliding_window.next()
         except:
             self._image, image_data = self.load_next_image()
-            self._sliding_window = ScalingSlidingWindow(preprocess(image_data), 32, 1,
+            self._sliding_window = ScalingSlidingWindow(preprocess(image_data), 64, 1,
                                                         zoom_factor=lambda x: 1 / (x + 1))
             image_raw, current_window = self._sliding_window.next()
 
         # Find all regions of interest, that overlap to at lest 90% with this region of interest
-        regions = self._image.get_overlapping_regions(current_window, 0.9)
+        regions = self._image.get_overlapping_regions(current_window, 0.85)
 
         # Load and prepare ground truth
         label = np.zeros(2).astype(np.float32)
@@ -179,8 +194,8 @@ def preprocess(im):
     """
 
     im = np.float32(im)
-    im = im[:, :, ::-1]  # change to BGR
-    im = im.transpose((2, 0, 1))
+    #im = im[:, :, ::-1]  # change to BGR
+    #im = im.transpose((2, 0, 1))
 
     return im
 

@@ -79,24 +79,12 @@ layer {
   }
 }
 layer {
-  name: "relu7"
-  type: "ReLU"
-  bottom: "fc7"
-  top: "fc7"
-}
-layer {
-  name: "drop7"
-  type: "Dropout"
-  bottom: "fc7"
-  top: "fc7"
-}
-layer {
   name: "score"
   type: "InnerProduct"
   bottom: "fc7"
   top: "score"
   inner_product_param {
-    num_output: 2
+    num_output: 20
   }
 }
 layer {
@@ -108,8 +96,7 @@ layer {
 }
 layer {
   name: "loss"
-  type: "SoftmaxWithLoss"
+  type: "Softmax"
   bottom: "score"
-  bottom: "label"
   top: "loss"
 }
