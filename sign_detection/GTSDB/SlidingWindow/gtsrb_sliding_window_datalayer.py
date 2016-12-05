@@ -23,8 +23,8 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         # once. Else, we'd have to do it in the reshape call.
         top[0].reshape(self.batch_size, 3, params['window_size'], params['window_size'])
 
-        # Use two values to determine, if a region contains a sign ([1]=1) or not ([0]=1)
-        top[1].reshape(self.batch_size, 2)
+        # Use one values to determine the class, if a region contains a sign class = 1, else 0
+        top[1].reshape(self.batch_size, 1)
 
     def forward(self, bottom, top):
         """
