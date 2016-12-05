@@ -30,13 +30,12 @@ class GtsdbSlidingWindowDataLayer(caffe.Layer):
         """
         Load data.
         """
-        regions = []
         for itt in range(self.batch_size):
             # Use the batch loader to load the next image.
             im, label = self.batch_loader.next_window()
 
-            top[0].data[itt, ...] = regions[itt][0]
-            top[1].data[itt, ...] = regions[itt][1]
+            top[0].data[itt, ...] = im
+            top[1].data[itt, ...] = label
 
     def reshape(self, bottom, top):
         """
