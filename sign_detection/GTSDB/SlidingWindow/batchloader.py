@@ -23,7 +23,7 @@ class BatchLoader(object):
     def __init__(self, params, num, fraction):
         self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
-        self.im_shape = params['window_size']
+        self.window_size = params['window_size']
         self._cur = 0
         self._sliding_window = None
         self._image = None
@@ -46,15 +46,17 @@ class BatchLoader(object):
         signs = []
         no_signs = []
 
-        for i in range(0,self.num, 1):
+        for i in range(0, self.num, 1):
             image, label = self.__load_next_window()
             if label[0] == 1:
                 no_signs.append((image, label))
             else:
                 signs.append((image, label))
 
-        no_sign_count = len(signs)*self.fraction
+        no_sign_count = max(len(signs) * self.fraction, len(no_signs))
         random.shuffle(no_signs)
+
+        # create result array
         result = []
         result.extend(signs)
         result.extend(no_signs[0:int(no_sign_count)])
@@ -62,13 +64,11 @@ class BatchLoader(object):
         self._windows = result
 
     def __load_next_window(self):
-        image_raw = None
-        current_window = None
         try:
             image_raw, current_window = self._sliding_window.next()
         except:
             self._image, image_data = self.load_next_image()
-            self._sliding_window = ScalingSlidingWindow(image_data, 64, 1,
+            self._sliding_window = ScalingSlidingWindow(image_data, self.window_size, 1,
                                                         zoom_factor=lambda x: 1 / (x + 1))
             image_raw, current_window = self._sliding_window.next()
 
@@ -88,15 +88,15 @@ class BatchLoader(object):
         """
         Load the next image in a batch.
         """
+
         # Did we finish an epoch?
         if self._cur == len(self.images):
             self._cur = 0
             shuffle(self.images)
 
         # Load an image
-        image = self.images[self._cur]  # Get the image index
-        image_data = np.asarray(Image.open(
-            osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
+        image = self.images[self._cur]
+        image_data = np.asarray(Image.open(osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
 
         self._cur += 1
         return image, image_data
