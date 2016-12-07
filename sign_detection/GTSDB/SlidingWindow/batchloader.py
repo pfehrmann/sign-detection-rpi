@@ -76,7 +76,7 @@ class BatchLoader(object):
             else:
                 no_signs.append((image, label))
 
-        no_sign_count = max(0, min(len(signs) / self.fraction - len(signs), len(no_signs)))
+        no_sign_count = int(max(0, min(len(signs) / self.fraction - len(signs), len(no_signs))))
         random.shuffle(no_signs)
 
         # create and shuffle result array
