@@ -29,7 +29,6 @@ class BatchLoader(object):
                     the more random the results are but also more RAM will be used.
         :param fraction: The percentage of images with signs (eg. fraction == 0.3: signs: 100, no signs: 233)
         """
-        self.batch_size = params['batch_size']
         self.gtsdb_root = params['gtsdb_root']
         self.window_size = params['window_size']
         self._cur = 0
