@@ -41,7 +41,7 @@ class BatchLoader(object):
         self.images = get_images_and_regions(self.gtsdb_root)
 
         print "BatchLoader initialized with {} images, {}% of each collection are signs".format(
-            len(self.images), fraction)
+            len(self.images), fraction*100)
 
     def next_window(self):
         """
@@ -76,7 +76,7 @@ class BatchLoader(object):
             else:
                 no_signs.append((image, label))
 
-        no_sign_count = max(0, min(len(signs) * self.fraction - len(signs), len(no_signs)))
+        no_sign_count = max(0, min(len(signs) / self.fraction - len(signs), len(no_signs)))
         random.shuffle(no_signs)
 
         # create and shuffle result array
