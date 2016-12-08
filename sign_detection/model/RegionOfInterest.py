@@ -92,8 +92,13 @@ class RegionOfInterest(object):
 
         :type other: RegionOfInterest
         """
-        return 0.01 * max(0, min(self.x2, other.x2) - max(self.x1, other.x1)) \
-                    * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
+        area = float(max(self.area(), other.area()))
+        overlap = max(0, min(self.x2, other.x2) - max(self.x1, other.x1)) \
+                  * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
+        return overlap / area
+
+    def area(self):
+        return (self.x1 - self.x2) * (self.y1 - self.y2)
 
     def project(self, factor):
         """
