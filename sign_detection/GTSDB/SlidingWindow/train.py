@@ -49,9 +49,10 @@ def parse_arguments():
     # Create the parser
     parser = argparse.ArgumentParser(description='Train a net to detect regions in images')
     parser.add_argument('solver', type=str, help='The solver file to use')
-    parser.add_argument('-g', '--gpu', type=bool, default=True, help='Train on GPU?')
+    parser.add_argument('-g', '--no-gpu', dest='gpu', action='store_false', help='Train without GPU?')
     parser.add_argument('-s', '--usesolver', type=bool, default=False, help='Use only the settings from the solver?')
     parser.add_argument('-i', '--iterations', type=int, default=6, help='The number of iterations (ignored, when using solvers settings)')
+    parser.set_defaults(gpu=True)
 
     # Read the input arguments
     args = parser.parse_args()
@@ -65,5 +66,5 @@ def parse_arguments():
     stop = timeit.default_timer()
     print("Time:  " + str(stop - start))
 
-#parse_arguments()
-train("Mini_net_solver.prototxt", iters=6)
+parse_arguments()
+#train("Mini_net_solver.prototxt", iters=6)
