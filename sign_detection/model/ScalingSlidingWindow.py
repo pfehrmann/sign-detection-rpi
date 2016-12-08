@@ -141,4 +141,4 @@ def test():
         imsave('image/%s.bmp' % it, scaled)
         it += 1
 
-test()
+# test()
