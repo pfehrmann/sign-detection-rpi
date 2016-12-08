@@ -20,13 +20,14 @@ def train(solver_name, gpu=True, use_solver=False, iters=100):
     """
 
     # Set the correct device for solving
-    if (gpu):
+    if gpu:
         caffe.set_device(0)
         caffe.set_mode_gpu()
     else:
         caffe.set_mode_cpu()
 
     # Initialize the solver
+    print "Create solver"
     solver = caffe.get_solver(solver_name)
 
     print "Starting solving"
@@ -51,7 +52,8 @@ def parse_arguments():
     parser.add_argument('solver', type=str, help='The solver file to use')
     parser.add_argument('-g', '--no-gpu', dest='gpu', action='store_false', help='Train without GPU?')
     parser.add_argument('-s', '--usesolver', type=bool, default=False, help='Use only the settings from the solver?')
-    parser.add_argument('-i', '--iterations', type=int, default=6, help='The number of iterations (ignored, when using solvers settings)')
+    parser.add_argument('-i', '--iterations', type=int, default=6, help='The number of iterations (ignored, when '
+                                                                        'using solvers settings)')
     parser.set_defaults(gpu=True)
 
     # Read the input arguments
