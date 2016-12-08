@@ -16,7 +16,8 @@ class ScalingSlidingWindow(object):
         :param overlap: How much the sliding window will overlap after each step, as fractal.
         :param zoom_factor: A function to determine the next zoom factor. It will get the number of the iteration,
                stating with 0. After each iteration the image will be zoomed to the width and height of the original
-               image multiplied with the result of this function.
+               image multiplied with the result of this function. When the function returns a value <= 0 or > 1, no
+               further image will be returned.
         """
 
         # Copy the constructor arguments
@@ -77,7 +78,7 @@ class ScalingSlidingWindow(object):
         # Scale the image
         # 1. Find out how much
         self.factor = self.zoom(self.iteration)
-        if self.factor <= 0:
+        if self.factor <= 0 > 1:
             self.factor_end = True
             return
 
