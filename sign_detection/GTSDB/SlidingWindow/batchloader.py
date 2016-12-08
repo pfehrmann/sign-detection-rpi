@@ -101,16 +101,23 @@ class BatchLoader(object):
         except:
             self._image, image_data = self.__load_next_image()
             self._sliding_window = ScalingSlidingWindow(image_data, self.window_size, 1,
-                                                        zoom_factor=lambda x: 1 / (x + 1))
+                                                        zoom_factor=lambda x: -0.0110333 * x + 1, overlap=.8)
             image_raw, current_window = self._sliding_window.next()
 
-        # Find all regions of interest, that overlap to at lest 90% with this region of interest
-        regions = self._image.get_overlapping_regions(current_window, 0.85)
+        # Find all regions of interest, that overlap to at lest 60% with this region of interest
+        regions = self._image.get_overlapping_regions(current_window, 0.60)
 
         # Load and prepare ground truth
         label = 0
+
         if len(regions) == 1:
             label = 1
+
+        if len(regions) > 0:
+            print "({},{}), ({},{})".format(regions[0].x1, regions[0].y1, regions[0].x2, regions[0].y2)
+            print "({},{}), ({},{})".format(current_window.x1, current_window.y1, current_window.x2, current_window.y2)
+            print "Overlap: {}".format(regions[0].get_overlap(current_window))
+            show_image_and_label(image_raw, label)
 
         return image_raw, label
 
@@ -130,6 +137,8 @@ class BatchLoader(object):
         # Load an image
         image = self.images[self._cur]
         image_data = np.asarray(Image.open(osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
+
+        show_image_and_regions(image_data, image.region_of_interests)
 
         self._cur += 1
         return image, image_data
@@ -185,3 +194,28 @@ def get_images_and_regions(gtsdb_root):
             images.append(last_image)
 
     return images
+
+
+def show_image_and_label(image, label_info):
+    from scipy.misc import imshow
+    print label_info
+    imshow(image)
+
+
+def show_image_and_regions(image, regions):
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+
+    from skimage.measure import label
+    label_image = label(image.copy())
+
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
+    ax.imshow(label_image)
+
+    for region in regions:
+        rect = mpatches.Rectangle((region.x1, region.y1), region.x2 - region.x1, region.y2 - region.y1,
+                                  fill=False, edgecolor='red', linewidth=2)
+
+        ax.add_patch(rect)
+
+    plt.show()
