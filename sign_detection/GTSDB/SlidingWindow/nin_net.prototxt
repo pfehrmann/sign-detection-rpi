@@ -1,30 +1,30 @@
 name: "nin_imagenet"
 layer {
-  name: "data"
+  name: "sliding"
+  type: "Data"
   top: "data"
   top: "label"
-  type: "Python"
-  python_param {
-    module: "gtsrb_sliding_window_datalayer"
-    layer: "GtsdbSlidingWindowDataLayer"
-    param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'window_size\': 64, \'batch_size\': 128}"
-  }
   include {
-    phase: TEST
+    phase: TRAIN
+  }
+  data_param {
+    source: "gtsdb_sliding_dataset"
+    batch_size: 64
+    backend: LMDB
   }
 }
 layer {
-  name: "data"
+  name: "sliding"
+  type: "Data"
   top: "data"
   top: "label"
-  type: "Python"
-  python_param {
-    module: "gtsrb_sliding_window_datalayer"
-    layer: "GtsdbSlidingWindowDataLayer"
-    param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'window_size\': 64, \'batch_size\': 64}"
-  }
   include {
-    phase: TRAIN
+    phase: TEST
+  }
+  data_param {
+    source: "gtsdb_sliding_dataset_test"
+    batch_size: 100
+    backend: LMDB
   }
 }
 layer {
