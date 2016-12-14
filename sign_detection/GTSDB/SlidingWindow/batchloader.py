@@ -149,7 +149,7 @@ class BatchLoader(object):
             flag = True
             region = RegionOfInterest(x1, y1, x1 + local_size, y1 + local_size, 0)
             for roi in image.region_of_interests:
-                if region.get_overlap(roi) >= max_overlap:
+                if region.get_overlap(roi) > max_overlap:
                     flag = False
             if flag:
                 image_raw = raw[y1:y1 + local_size, x1:x1 + local_size, :]
