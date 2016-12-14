@@ -3,7 +3,8 @@ from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
 import caffe
 
-def read_traffic_signs(root_path):
+
+def read_train_traffic_signs(root_path):
     """
     Reads traffic sign data for German Traffic Sign Recognition Benchmark.
 
@@ -28,4 +29,22 @@ def read_traffic_signs(root_path):
             image = IdentifiedImage(path_to_image, roi)
             images.append(image)
         gtFile.close()
+    return images
+
+def read_test_traffic_signs(root_path):
+    prefix = root_path + "/"
+    gtFile = open(prefix + "GT-final_test.csv")
+    gtReader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
+    gtReader.next()  # skip header
+
+    images = []
+    # loop over all images in current annotations file
+    for row in gtReader:
+        path_to_image = prefix + row[0]
+
+        # find size of image
+        roi = [RegionOfInterest(row[3], row[4], row[5], row[6], row[7])]
+        image = IdentifiedImage(path_to_image, roi)
+        images.append(image)
+    gtFile.close()
     return images
