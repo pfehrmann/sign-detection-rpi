@@ -129,6 +129,17 @@ class BatchLoader(object):
             signs.extend(generated)
 
         # generate an equal amount of non sign images
+        no_signs = self.generate_windows_without_signs(size=size, regions_per_image=regions_per_image, max_overlap=overlap/2, image=image, raw=raw)
+
+        result = no_signs[:]
+        result.extend(signs)
+        shuffle(result)
+        return result
+
+    def generate_windows_without_signs(self, size=64, regions_per_image=3, max_overlap=0.1, transpose=(2, 0, 1),
+                                       image=None, raw=None):
+        if image == None or raw == None:
+            image, raw = self.__load_next_image()
         no_signs = []
         while len(no_signs) < regions_per_image:
             local_size = random.randint(1, 400)
@@ -138,20 +149,19 @@ class BatchLoader(object):
             flag = True
             region = RegionOfInterest(x1, y1, x1 + local_size, y1 + local_size, 0)
             for roi in image.region_of_interests:
-                if region.get_overlap(roi) >= overlap / 2:
+                if region.get_overlap(roi) >= max_overlap:
                     flag = False
             if flag:
                 image_raw = raw[y1:y1 + local_size, x1:x1 + local_size, :]
                 scaled = imresize(image_raw, (size, size))
-                transposed = scaled.transpose((2, 0, 1))
-                no_signs.append((transposed, 43))  # 43 Is the class for "no sign"
+                if transpose is not None:
+                    transposed = scaled.transpose((2, 0, 1))
+                    no_signs.append((transposed, 43))  # 43 Is the class for "no sign"
+                else:
+                    no_signs.append((scaled, 43))  # 43 Is the class for "no sign"
 
-        result = no_signs[:]
-        result.extend(signs)
-        shuffle(result)
-        return result
-
-
+        shuffle(no_signs)
+        return no_signs
     def __load_next_window(self):
         """
         load the next window. If the current image contains no more windows, loads the next window.
