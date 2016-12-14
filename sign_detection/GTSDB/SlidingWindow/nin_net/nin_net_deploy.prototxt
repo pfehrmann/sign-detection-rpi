@@ -1,31 +1,10 @@
 name: "nin_imagenet"
-layer {
-  name: "sliding"
-  type: "Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  data_param {
-    source: "gtsdb_sliding_dataset"
-    batch_size: 64
-    backend: LMDB
-  }
-}
-layer {
-  name: "sliding"
-  type: "Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  data_param {
-    source: "gtsdb_sliding_dataset_test"
-    batch_size: 100
-    backend: LMDB
-  }
+input: "data"
+input_shape {
+  dim: 1 # batchsize
+  dim: 3 # number of colour channels - rgb
+  dim: 64 # height
+  dim: 64 # width
 }
 layer {
   bottom: "data"
@@ -304,68 +283,6 @@ layer {
 }
 layer {
   bottom: "pool3"
-  top: "pool3"
-  name: "drop"
-  type: "Dropout"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-}
-layer {
-  bottom: "pool3"
-  top: "conv4"
-  name: "conv4-1024"
-  type: "Convolution"
-  convolution_param {
-    num_output: 1024
-    pad: 1
-    kernel_size: 3
-    stride: 1
-    weight_filler {
-      type: "gaussian"
-      mean: 0
-      std: 0.05
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
-layer {
-  bottom: "conv4"
-  top: "conv4"
-  name: "relu10"
-  type: "ReLU"
-}
-layer {
-  bottom: "conv4"
-  top: "cccp7"
-  name: "cccp7-1024"
-  type: "Convolution"
-  convolution_param {
-    num_output: 1024
-    kernel_size: 1
-    stride: 1
-    weight_filler {
-      type: "gaussian"
-      mean: 0
-      std: 0.05
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
-layer {
-  bottom: "cccp7"
-  top: "cccp7"
-  name: "relu11"
-  type: "ReLU"
-}
-layer {
-  bottom: "cccp7"
   top: "cccp8"
   name: "cccp8-1024"
   type: "Convolution"
@@ -401,28 +318,8 @@ layer {
   }
 }
 layer {
-  name: "fc1"
-  type: "InnerProduct"
-  bottom: "pool4"
-  top: "fc1"
-  inner_product_param {
-    num_output: 2
-  }
-}
-layer {
-  name: "accuracy"
-  type: "Accuracy"
-  bottom: "fc1"
-  bottom: "label"
-  top: "accuracy"
-  include {
-    phase: TEST
-  }
-}
-layer {
-  bottom: "fc1"
-  bottom: "label"
-  top: "loss"
   name: "loss"
-  type: "SoftmaxWithLoss"
+  type: "Softmax"
+  bottom: "pool4"
+  top: "loss"
 }

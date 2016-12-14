@@ -6,6 +6,7 @@ from random import shuffle
 import gc
 import numpy as np
 from PIL import Image
+from scipy.misc import imresize
 
 from sign_detection.model.IdentifiedImage import IdentifiedImage
 from sign_detection.model.RegionOfInterest import RegionOfInterest
@@ -90,6 +91,67 @@ class BatchLoader(object):
               "Overall {} images contain no signs.".format(
                self.num, len(result), len(signs), no_sign_count, len(no_signs))
 
+    def generate_regions_from_image(self, size=64, regions_per_roi=10, regions_per_image=3, overlap=0.75):
+        image, raw = self.__load_next_image()
+
+        # generate regions from rois
+        signs = []
+        for roi in image.region_of_interests:
+            dx = lambda dx: (roi.x1 - roi.x2) * (1 - dx) / 2 * (random.random() * 2 - 1)
+            dy = lambda dy: (roi.y1 - roi.y2) * (1 - dy) / 2 * (random.random() * 2 - 1)
+
+            generated = []
+            i = 0
+            while len(generated) < regions_per_roi and i < regions_per_roi * 2:
+                i += 1
+                d = dx(overlap)
+                x1 = max(0, int(roi.x1 + d))
+                x2 = max(0, int(roi.x2 + d))
+                if x2 < x1:
+                    temp = x1
+                    x1 = x2
+                    x2 = temp
+                d = dy(overlap)
+                y1 = max(0, int(roi.y1 + d))
+                y2 = max(0, int(roi.y2 + d))
+                if y2 < y1:
+                    temp = y1
+                    y1 = y2
+                    y2 = temp
+
+                region = RegionOfInterest(x1, y1, x2, y2, roi.sign)
+                o = region.get_overlap(roi)
+                if o >= overlap:
+                    image_raw = raw[y1:y2 + 1, x1:x2 + 1, :]
+                    scaled = imresize(image_raw, (size, size))
+                    transposed = scaled.transpose((2, 0, 1))
+                    generated.append((transposed, roi.sign))
+            signs.extend(generated)
+
+        # generate an equal amount of non sign images
+        no_signs = []
+        while len(no_signs) < regions_per_image:
+            local_size = random.randint(1, 400)
+            x1 = random.randint(1, raw.shape[1] - local_size)
+            y1 = random.randint(1, raw.shape[0] - local_size)
+
+            flag = True
+            region = RegionOfInterest(x1, y1, x1 + local_size, y1 + local_size, 0)
+            for roi in image.region_of_interests:
+                if region.get_overlap(roi) >= overlap / 2:
+                    flag = False
+            if flag:
+                image_raw = raw[y1:y1 + local_size, x1:x1 + local_size, :]
+                scaled = imresize(image_raw, (size, size))
+                transposed = scaled.transpose((2, 0, 1))
+                no_signs.append((transposed, 43))  # 43 Is the class for "no sign"
+
+        result = no_signs[:]
+        result.extend(signs)
+        shuffle(result)
+        return result
+
+
     def __load_next_window(self):
         """
         load the next window. If the current image contains no more windows, loads the next window.
@@ -101,19 +163,20 @@ class BatchLoader(object):
         except:
             self._image, image_data = self.__load_next_image()
             self._sliding_window = ScalingSlidingWindow(image_data, self.window_size, 1,
-                                                        zoom_factor=lambda x: -0.0110333 * x + 1, overlap=.8)
+                                                        zoom_factor=lambda x: 1 - 0.005 * x, overlap=.9)
             image_raw, current_window = self._sliding_window.next()
 
-        # Find all regions of interest, that overlap to at lest 60% with this region of interest
-        regions = self._image.get_overlapping_regions(current_window, 0.60)
+        # Find all regions of interest, that overlap to at lest 50% with this region of interest
+        regions = self._image.get_overlapping_regions(current_window, 0.50)
 
+        # label 43 is used for "no sign"
         # Load and prepare ground truth
-        label = 0
+        label = 43
 
         if len(regions) == 1:
-            label = 1
+            label = regions[0]
 
-        if len(regions) > 0:
+        if False and len(regions) > 0:
             print "({},{}), ({},{})".format(regions[0].x1, regions[0].y1, regions[0].x2, regions[0].y2)
             print "({},{}), ({},{})".format(current_window.x1, current_window.y1, current_window.x2, current_window.y2)
             print "Overlap: {}".format(regions[0].get_overlap(current_window))
@@ -138,7 +201,7 @@ class BatchLoader(object):
         image = self.images[self._cur]
         image_data = np.asarray(Image.open(osp.join(self.gtsdb_root, 'JPEGImages', image.path)))
 
-        show_image_and_regions(image_data, image.region_of_interests)
+        # show_image_and_regions(image_data, image.region_of_interests)
 
         self._cur += 1
         return image, image_data
@@ -192,7 +255,7 @@ def get_images_and_regions(gtsdb_root):
         else:
             last_image = image
             images.append(last_image)
-
+    shuffle(images)
     return images
 
 

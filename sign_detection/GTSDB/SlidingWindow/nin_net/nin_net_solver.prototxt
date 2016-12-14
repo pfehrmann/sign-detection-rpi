@@ -1,0 +1,21 @@
+net: "nin_net/nin_net.prototxt"
+test_iter: 50
+test_interval: 250
+base_lr: 0.01
+iter_size: 4
+lr_policy: "multistep"
+stepvalue: 1000
+stepvalue: 5000
+stepvalue: 15000
+stepvalue: 30000
+stepvalue: 40000
+gamma: 0.5
+display: 20
+max_iter: 45000
+momentum: 0.9
+weight_decay: 0.005
+snapshot: 500
+snapshot_prefix: "nin_net/"
+solver_mode: GPU
+
+# about 81% on test

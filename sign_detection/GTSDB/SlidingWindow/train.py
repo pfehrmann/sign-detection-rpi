@@ -66,5 +66,7 @@ def parse_arguments():
     stop = timeit.default_timer()
     print("Time:  " + str(stop - start))
 
-parse_arguments()
-#train("Mini_net_solver.prototxt", iters=6)
+
+# parse_arguments()
+# train("nin_net/nin_net_solver.prototxt", True, True)  # 81%
+train("quad_nin/quadruple_nin_solver.prototxt", True, True)
