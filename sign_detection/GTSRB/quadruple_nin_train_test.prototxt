@@ -27,7 +27,7 @@ layer {
     top: "label"
     image_data_param {
         source: "data/_temp/file_list_test.txt"
-        batch_size: 89
+        batch_size: 64
         rand_skip: 0
         shuffle: 1
         new_height: 64
@@ -1152,7 +1152,7 @@ layer {
     top: "Fully connected Node.0020"
     bottom: "Concatanation Node0"
     inner_product_param {
-        num_output: 43
+        num_output: 86
         weight_filler {
             type: "xavier"
             variance_norm: FAN_IN
@@ -1164,10 +1164,34 @@ layer {
     }
 }
 layer {
+    name: "Fully connected Node.003f"
+    type: "InnerProduct"
+    top: "Fully connected Node.final"
+    bottom: "Fully connected Node.0020"
+    inner_product_param {
+        num_output: 43
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+# SPP
+#layer {
+#    name: "SPP1"
+#    type: "SPP"
+#    bottom: "Fully connected Node.final"
+#    top: "SPP1"
+#}
+layer {
     name: "accuracy"
     type: "Accuracy"
     top: "accuracy0"
-    bottom: "Fully connected Node.0020"
+    bottom: "Fully connected Node.final"
     bottom: "label"
     include {
         phase: TEST
@@ -1177,7 +1201,7 @@ layer {
     name: "loss"
     type: "SoftmaxWithLoss"
     top: "loss0"
-    bottom: "Fully connected Node.0020"
+    bottom: "Fully connected Node.final"
     bottom: "label"
     loss_weight: 1.000000
 }

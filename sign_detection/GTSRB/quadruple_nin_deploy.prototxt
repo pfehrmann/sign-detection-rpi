@@ -1116,6 +1116,23 @@ layer {
     top: "Fully connected Node.0020"
     bottom: "Concatanation Node0"
     inner_product_param {
+        num_output: 86
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+layer {
+    name: "Fully connected Node.003f"
+    type: "InnerProduct"
+    top: "Fully connected Node.final"
+    bottom: "Fully connected Node.0020"
+    inner_product_param {
         num_output: 43
         weight_filler {
             type: "xavier"
@@ -1130,6 +1147,6 @@ layer {
 layer {
   name: "loss"
   type: "Softmax"
-  bottom: "Fully connected Node.0020"
+  bottom: "Fully connected Node.final"
   top: "loss"
 }
