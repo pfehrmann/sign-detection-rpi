@@ -78,7 +78,9 @@ class ScalingSlidingWindow(object):
         # Scale the image
         # 1. Find out how much
         self.factor = self.zoom(self.iteration)
-        if self.factor <= 0 > 1:
+        if self.factor <= 0.0 > 1.0 \
+                or int(round(self.image_height * self.factor)) <= 0 \
+                or int(round(self.image_width * self.factor)) <= 0:
             self.factor_end = True
             return
 
