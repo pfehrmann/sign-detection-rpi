@@ -80,7 +80,8 @@ def get_name_from_category(category):
         39: "keep left",
         40: "roundabout",
         41: "restriction ends (overtaking)",
-        42: "restriction ends (overtaking (trucks))"}
+        42: "restriction ends (overtaking (trucks))",
+        43: "no sign"}
     return categories[category]
 
 def parse_arguments():
@@ -106,12 +107,12 @@ def parse_arguments():
 
     start = timeit.default_timer()
 
-    category = compute(net)
+    category, probability = compute(net)
 
     stop = timeit.default_timer()
 
     print("Time:  " + str(stop - start))
-    print "Category: " + str(category) + ": " + get_name_from_category(category)
+    print "Category: " + str(category) + ": " + get_name_from_category(category) + ", " + str(probability)
 
 
 #parse_arguments()
