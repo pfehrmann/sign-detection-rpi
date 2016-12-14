@@ -1,6 +1,6 @@
 net: "nin_net.prototxt"
-test_iter: 1000
-test_interval: 1000
+test_iter: 409  # checks total test: 64*202
+test_interval: 500
 base_lr: 0.01
 lr_policy: "step"
 gamma: 0.1
@@ -9,6 +9,6 @@ display: 50
 max_iter: 45000
 momentum: 0.9
 weight_decay: 0.005
-snapshot: 10000
-snapshot_prefix: "data/gtsrb/nin_net"
+snapshot: 2000
+snapshot_prefix: "data/nin_net/nin_net"
 solver_mode: GPU

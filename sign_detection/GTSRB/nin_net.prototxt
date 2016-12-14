@@ -27,7 +27,7 @@ layer {
     source: "data/_temp/file_list_test.txt"
     new_width: 64
     new_height: 64
-    batch_size: 89
+    batch_size: 64
     shuffle: true
   }
 }
@@ -410,7 +410,7 @@ layer {
   bottom: "pool4"
   top: "fc1"
   inner_product_param {
-    num_output: 43
+    num_output: 44
   }
 }
 layer {

@@ -385,7 +385,7 @@ layer {
   bottom: "pool4"
   top: "fc1"
   inner_product_param {
-    num_output: 43
+    num_output: 44
   }
 }
 layer {
