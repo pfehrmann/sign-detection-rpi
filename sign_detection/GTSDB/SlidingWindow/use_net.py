@@ -10,24 +10,34 @@ from sign_detection.model.Sign import get_name_from_category
 from sign_detection.tools import lmdb_tools
 
 
-def identify_regions(model, weights, image_path, gpu=True):
+def initialize_net(model, weights, gpu=True):
     if gpu:
         caffe.set_device(0)
         caffe.set_mode_gpu()
     else:
         caffe.set_mode_cpu()
 
-    net = caffe.Net(model, weights, caffe.TEST)
+    return caffe.Net(model, weights, caffe.TEST)
 
+
+def load_image(image_path):
     # load the image in the data layer
     im = caffe.io.load_image(image_path)
-    im *= 255.0
+    return im * 255.0
 
+
+def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.99, x=lambda x: 1 - 0.2 * x):
+    net = initialize_net(model, weights, gpu)
+    im = load_image(image_path)
+    identify_regions(net, im, minimum, x)
+
+
+def identify_regions(net, im, minimum=0.99, x=lambda x: 1 - 0.2 * x):
     rois = []
     number_of_images = 0
 
     # initialize the sliding window
-    window = ScalingSlidingWindow(im, 64, 1, 0.65, lambda x: 1 - 0.201 * x)
+    window = ScalingSlidingWindow(im, 64, 1, 0.65, x)
     i = 0
     for image, roi in window:
         if i % 1000 == 0: print str(i) + ", " + str(len(rois))
@@ -35,7 +45,7 @@ def identify_regions(model, weights, image_path, gpu=True):
         out = net.forward()
         class_index = out['loss'].argmax()
 
-        if class_index != 44 and out['loss'][0][class_index] == 1.0:
+        if class_index != 44 and out['loss'][0][class_index] >= minimum:
             rois.append(roi)
             text = get_name_from_category(class_index)
             print "C: {}, P: {}".format(text, out['loss'][0][class_index])
@@ -43,7 +53,7 @@ def identify_regions(model, weights, image_path, gpu=True):
             image = Image.fromarray(np.uint8(image), "RGB")
             draw = ImageDraw.Draw(image)
             font = ImageFont.truetype("arial.ttf", 14, encoding="unic")
-            draw.text((0, 0),  text, fill="#000000", font=font)
+            draw.text((0, 0), text, fill="#000000", font=font)
             image.show()
             # print "found"
 
@@ -75,7 +85,7 @@ def parse_arguments():
     identify_regions(args.model, args.weights, args.image[0], args.gpu)
 
 
-def test(model, weights, gpu=True):
+def __test(model, weights, gpu=True):
     if gpu:
         caffe.set_device(0)
         caffe.set_mode_gpu()
@@ -98,8 +108,9 @@ def test(model, weights, gpu=True):
 
 
 # parse_arguments()
-identify_regions(
-    "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSRB/nin_net_deploy.prototxt",
-    "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSRB/data/nin_net/nin_net_iter_12000.caffemodel",
-    "C:/development/FullIJCNN2013/FullIJCNN2013/00040.ppm")
+if __name__ == "__main__":
+    identify_regions_from_image(
+        "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSRB/nin_net_deploy.prototxt",
+        "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSRB/data/nin_net/nin_net_iter_12000.caffemodel",
+        "C:/development/FullIJCNN2013/FullIJCNN2013/00040.ppm")
 # test("nin_net_deploy.prototxt", "nin_net/_iter_2000.caffemodel")
