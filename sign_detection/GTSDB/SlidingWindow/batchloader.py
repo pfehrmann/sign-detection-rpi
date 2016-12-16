@@ -217,7 +217,7 @@ class BatchLoader(object):
         return image, image_data
 
 
-def get_images_and_regions(gtsdb_root):
+def get_images_and_regions(gtsdb_root, min=0, max=599):
     """
     Generates a list of images in the GTSDB contest. Only a maximum of 600 images are used. This is necessary, to also
     be able to use just the training data set
@@ -243,7 +243,7 @@ def get_images_and_regions(gtsdb_root):
     # fill in all the images without a region of interest
     # there are images ranging from 00000 to 00599
     # higher numbers are ignored.
-    for i in range(0, 599):
+    for i in range(min, max):
         found = False
         for image in duplicated_images:
             if str(i) in image.path:
