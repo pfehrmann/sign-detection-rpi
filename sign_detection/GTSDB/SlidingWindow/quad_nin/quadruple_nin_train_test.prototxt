@@ -1,0 +1,1167 @@
+layer {
+  name: "data"
+  top: "data"
+  top: "label"
+  type: "Python"
+  python_param {
+    module: "gtsrb_sliding_window_datalayer"
+    layer: "GtsdbSlidingWindowDataLayer"
+    param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'window_size\': 32, \'batch_size\': 128}"
+  }
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "data"
+  top: "data"
+  top: "label"
+  type: "Python"
+  python_param {
+    module: "gtsrb_sliding_window_datalayer"
+    layer: "GtsdbSlidingWindowDataLayer"
+    param_str: "{\'gtsdb_root\': \'E:/Downloads/TrainIJCNN2013/TrainIJCNN2013', \'window_size\': 32, \'batch_size\': 4}"
+  }
+  include {
+    phase: TRAIN
+  }
+}
+layer {
+    name: "conv1.003"
+    type: "Convolution"
+    top: "conv1.0030"
+    bottom: "data"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 11
+        stride: 4
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv1.002"
+    type: "Convolution"
+    top: "conv1.0020"
+    bottom: "data"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 11
+        stride: 4
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv1"
+    type: "Convolution"
+    top: "conv10"
+    bottom: "data"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 11
+        stride: 4
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv1.001"
+    type: "Convolution"
+    top: "conv1.0010"
+    bottom: "data"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 11
+        stride: 4
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu0.003"
+    type: "ReLU"
+    top: "conv1.0030"
+    bottom: "conv1.0030"
+}
+layer {
+    name: "relu0.002"
+    type: "ReLU"
+    top: "conv1.0020"
+    bottom: "conv1.0020"
+}
+layer {
+    name: "relu0"
+    type: "ReLU"
+    top: "conv10"
+    bottom: "conv10"
+}
+layer {
+    name: "relu0.001"
+    type: "ReLU"
+    top: "conv1.0010"
+    bottom: "conv1.0010"
+}
+layer {
+    name: "cccp1.003"
+    type: "Convolution"
+    top: "cccp1.0030"
+    bottom: "conv1.0030"
+    param {
+        lr_mult: 1.000000
+        decay_mult: 1.000000
+    }
+    param {
+        lr_mult: 2.000000
+        decay_mult: 0.000000
+    }
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp1.002"
+    type: "Convolution"
+    top: "cccp1.0020"
+    bottom: "conv1.0020"
+    param {
+        lr_mult: 1.000000
+        decay_mult: 1.000000
+    }
+    param {
+        lr_mult: 2.000000
+        decay_mult: 0.000000
+    }
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp1"
+    type: "Convolution"
+    top: "cccp10"
+    bottom: "conv10"
+    param {
+        lr_mult: 1.000000
+        decay_mult: 1.000000
+    }
+    param {
+        lr_mult: 2.000000
+        decay_mult: 0.000000
+    }
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp1.001"
+    type: "Convolution"
+    top: "cccp1.0010"
+    bottom: "conv1.0010"
+    param {
+        lr_mult: 1.000000
+        decay_mult: 1.000000
+    }
+    param {
+        lr_mult: 2.000000
+        decay_mult: 0.000000
+    }
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu1.003"
+    type: "ReLU"
+    top: "cccp1.0030"
+    bottom: "cccp1.0030"
+}
+layer {
+    name: "relu1.002"
+    type: "ReLU"
+    top: "cccp1.0020"
+    bottom: "cccp1.0020"
+}
+layer {
+    name: "relu1"
+    type: "ReLU"
+    top: "cccp10"
+    bottom: "cccp10"
+}
+layer {
+    name: "relu1.001"
+    type: "ReLU"
+    top: "cccp1.0010"
+    bottom: "cccp1.0010"
+}
+layer {
+    name: "cccp2.003"
+    type: "Convolution"
+    top: "cccp2.0030"
+    bottom: "cccp1.0030"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp2.002"
+    type: "Convolution"
+    top: "cccp2.0020"
+    bottom: "cccp1.0020"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp2"
+    type: "Convolution"
+    top: "cccp20"
+    bottom: "cccp10"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp2.001"
+    type: "Convolution"
+    top: "cccp2.0010"
+    bottom: "cccp1.0010"
+    convolution_param {
+        num_output: 64
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu2.003"
+    type: "ReLU"
+    top: "cccp2.0030"
+    bottom: "cccp2.0030"
+}
+layer {
+    name: "relu2.002"
+    type: "ReLU"
+    top: "cccp2.0020"
+    bottom: "cccp2.0020"
+}
+layer {
+    name: "relu2"
+    type: "ReLU"
+    top: "cccp20"
+    bottom: "cccp20"
+}
+layer {
+    name: "relu2.001"
+    type: "ReLU"
+    top: "cccp2.0010"
+    bottom: "cccp2.0010"
+}
+layer {
+    name: "pool0.003"
+    type: "Pooling"
+    top: "pool0.0030"
+    bottom: "cccp2.0030"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "pool0.002"
+    type: "Pooling"
+    top: "pool0.0020"
+    bottom: "cccp2.0020"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "pool0"
+    type: "Pooling"
+    top: "pool00"
+    bottom: "cccp20"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "pool0.001"
+    type: "Pooling"
+    top: "pool0.0010"
+    bottom: "cccp2.0010"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "conv2.003"
+    type: "Convolution"
+    top: "conv2.0030"
+    bottom: "pool0.0030"
+    convolution_param {
+        num_output: 96
+        pad: 2
+        kernel_size: 5
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv2.002"
+    type: "Convolution"
+    top: "conv2.0020"
+    bottom: "pool0.0020"
+    convolution_param {
+        num_output: 96
+        pad: 2
+        kernel_size: 5
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv2"
+    type: "Convolution"
+    top: "conv20"
+    bottom: "pool00"
+    convolution_param {
+        num_output: 96
+        pad: 2
+        kernel_size: 5
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv2.001"
+    type: "Convolution"
+    top: "conv2.0010"
+    bottom: "pool0.0010"
+    convolution_param {
+        num_output: 96
+        pad: 2
+        kernel_size: 5
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu3.003"
+    type: "ReLU"
+    top: "conv2.0030"
+    bottom: "conv2.0030"
+}
+layer {
+    name: "relu3.002"
+    type: "ReLU"
+    top: "conv2.0020"
+    bottom: "conv2.0020"
+}
+layer {
+    name: "relu3"
+    type: "ReLU"
+    top: "conv20"
+    bottom: "conv20"
+}
+layer {
+    name: "relu3.001"
+    type: "ReLU"
+    top: "conv2.0010"
+    bottom: "conv2.0010"
+}
+layer {
+    name: "cccp3.003"
+    type: "Convolution"
+    top: "cccp3.0030"
+    bottom: "conv2.0030"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp3.002"
+    type: "Convolution"
+    top: "cccp3.0020"
+    bottom: "conv2.0020"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp3"
+    type: "Convolution"
+    top: "cccp30"
+    bottom: "conv20"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp3.001"
+    type: "Convolution"
+    top: "cccp3.0010"
+    bottom: "conv2.0010"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu5.003"
+    type: "ReLU"
+    top: "cccp3.0030"
+    bottom: "cccp3.0030"
+}
+layer {
+    name: "relu5.002"
+    type: "ReLU"
+    top: "cccp3.0020"
+    bottom: "cccp3.0020"
+}
+layer {
+    name: "relu5"
+    type: "ReLU"
+    top: "cccp30"
+    bottom: "cccp30"
+}
+layer {
+    name: "relu5.001"
+    type: "ReLU"
+    top: "cccp3.0010"
+    bottom: "cccp3.0010"
+}
+layer {
+    name: "cccp4.003"
+    type: "Convolution"
+    top: "cccp4.0030"
+    bottom: "cccp3.0030"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp4.002"
+    type: "Convolution"
+    top: "cccp4.0020"
+    bottom: "cccp3.0020"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp4"
+    type: "Convolution"
+    top: "cccp40"
+    bottom: "cccp30"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp4.001"
+    type: "Convolution"
+    top: "cccp4.0010"
+    bottom: "cccp3.0010"
+    convolution_param {
+        num_output: 96
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu6.003"
+    type: "ReLU"
+    top: "cccp4.0030"
+    bottom: "cccp4.0030"
+}
+layer {
+    name: "relu6.002"
+    type: "ReLU"
+    top: "cccp4.0020"
+    bottom: "cccp4.0020"
+}
+layer {
+    name: "relu6"
+    type: "ReLU"
+    top: "cccp40"
+    bottom: "cccp40"
+}
+layer {
+    name: "relu6.001"
+    type: "ReLU"
+    top: "cccp4.0010"
+    bottom: "cccp4.0010"
+}
+layer {
+    name: "pool2.003"
+    type: "Pooling"
+    top: "pool2.0030"
+    bottom: "cccp4.0030"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "pool2.002"
+    type: "Pooling"
+    top: "pool2.0020"
+    bottom: "cccp4.0020"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "pool2"
+    type: "Pooling"
+    top: "pool20"
+    bottom: "cccp40"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "pool2.001"
+    type: "Pooling"
+    top: "pool2.0010"
+    bottom: "cccp4.0010"
+    pooling_param {
+        pool: MAX
+        kernel_size: 3
+        stride: 2
+    }
+}
+layer {
+    name: "conv3.003"
+    type: "Convolution"
+    top: "conv3.0030"
+    bottom: "pool2.0030"
+    convolution_param {
+        num_output: 128
+        pad: 1
+        kernel_size: 3
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv3.002"
+    type: "Convolution"
+    top: "conv3.0020"
+    bottom: "pool2.0020"
+    convolution_param {
+        num_output: 128
+        pad: 1
+        kernel_size: 3
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv3"
+    type: "Convolution"
+    top: "conv30"
+    bottom: "pool20"
+    convolution_param {
+        num_output: 128
+        pad: 1
+        kernel_size: 3
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "conv3.001"
+    type: "Convolution"
+    top: "conv3.0010"
+    bottom: "pool2.0010"
+    convolution_param {
+        num_output: 128
+        pad: 1
+        kernel_size: 3
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.010000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu7.003"
+    type: "ReLU"
+    top: "conv3.0030"
+    bottom: "conv3.0030"
+}
+layer {
+    name: "relu7.002"
+    type: "ReLU"
+    top: "conv3.0020"
+    bottom: "conv3.0020"
+}
+layer {
+    name: "relu7"
+    type: "ReLU"
+    top: "conv30"
+    bottom: "conv30"
+}
+layer {
+    name: "relu7.001"
+    type: "ReLU"
+    top: "conv3.0010"
+    bottom: "conv3.0010"
+}
+layer {
+    name: "cccp5.003"
+    type: "Convolution"
+    top: "cccp5.0030"
+    bottom: "conv3.0030"
+    convolution_param {
+        num_output: 128
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp5.002"
+    type: "Convolution"
+    top: "cccp5.0020"
+    bottom: "conv3.0020"
+    convolution_param {
+        num_output: 128
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp5"
+    type: "Convolution"
+    top: "cccp50"
+    bottom: "conv30"
+    convolution_param {
+        num_output: 128
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "cccp5.001"
+    type: "Convolution"
+    top: "cccp5.0010"
+    bottom: "conv3.0010"
+    convolution_param {
+        num_output: 128
+        pad: 0
+        kernel_size: 1
+        stride: 1
+        weight_filler {
+            type: "gaussian"
+            mean: 0.000000
+            std: 0.050000
+        }
+        bias_filler {
+            type: "constant"
+            value: 0.000000
+        }
+    }
+}
+layer {
+    name: "relu8.003"
+    type: "ReLU"
+    top: "cccp5.0030"
+    bottom: "cccp5.0030"
+}
+layer {
+    name: "relu8.002"
+    type: "ReLU"
+    top: "cccp5.0020"
+    bottom: "cccp5.0020"
+}
+layer {
+    name: "relu8"
+    type: "ReLU"
+    top: "cccp50"
+    bottom: "cccp50"
+}
+layer {
+    name: "relu8.001"
+    type: "ReLU"
+    top: "cccp5.0010"
+    bottom: "cccp5.0010"
+}
+layer {
+    name: "pool3b.001"
+    type: "Pooling"
+    top: "pool3b.0010"
+    bottom: "cccp5.0020"
+    pooling_param {
+        pool: AVE
+        global_pooling: true
+    }
+}
+layer {
+    name: "pool3a.001"
+    type: "Pooling"
+    top: "pool3a.0010"
+    bottom: "cccp5.0030"
+    pooling_param {
+        pool: AVE
+        global_pooling: true
+    }
+}
+layer {
+    name: "pool3b"
+    type: "Pooling"
+    top: "pool3b0"
+    bottom: "cccp5.0010"
+    pooling_param {
+        pool: AVE
+        global_pooling: true
+    }
+}
+layer {
+    name: "pool3a"
+    type: "Pooling"
+    top: "pool3a0"
+    bottom: "cccp50"
+    pooling_param {
+        pool: AVE
+        global_pooling: true
+    }
+}
+layer {
+    name: "Fully connected Node.004"
+    type: "InnerProduct"
+    top: "Fully connected Node.0040"
+    bottom: "pool3b.0010"
+    inner_product_param {
+        num_output: 43
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+layer {
+    name: "Fully connected Node.003"
+    type: "InnerProduct"
+    top: "Fully connected Node.0030"
+    bottom: "pool3a.0010"
+    inner_product_param {
+        num_output: 43
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+layer {
+    name: "Fully connected Node.001"
+    type: "InnerProduct"
+    top: "Fully connected Node.0010"
+    bottom: "pool3b0"
+    inner_product_param {
+        num_output: 43
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+layer {
+    name: "Fully connected Node"
+    type: "InnerProduct"
+    top: "Fully connected Node0"
+    bottom: "pool3a0"
+    inner_product_param {
+        num_output: 43
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+layer {
+    name: "Concatanation Node"
+    type: "Concat"
+    top: "Concatanation Node0"
+    bottom: "Fully connected Node0"
+    bottom: "Fully connected Node.0010"
+    bottom: "Fully connected Node.0030"
+    bottom: "Fully connected Node.0040"
+    concat_param {
+        axis: 1
+    }
+}
+layer {
+    name: "Fully connected Node.002"
+    type: "InnerProduct"
+    top: "Fully connected Node.0020"
+    bottom: "Concatanation Node0"
+    inner_product_param {
+        num_output: 2
+        weight_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+        bias_filler {
+            type: "xavier"
+            variance_norm: FAN_IN
+        }
+    }
+}
+layer {
+    name: "accuracy"
+    type: "Accuracy"
+    top: "accuracy0"
+    bottom: "Fully connected Node.0020"
+    bottom: "label"
+    include {
+        phase: TEST
+    }
+}
+layer {
+    name: "loss"
+    type: "SoftmaxWithLoss"
+    top: "loss0"
+    bottom: "Fully connected Node.0020"
+    bottom: "label"
+    loss_weight: 1.000000
+}
