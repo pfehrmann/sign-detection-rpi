@@ -63,6 +63,7 @@ def identify_regions(net, im, minimum=0.99, x=lambda x: 1 - 0.2 * x):
     print "Images: " + str(number_of_images)
     print "Regions: " + str(rois)
     print "Number Regions: " + str(len(rois))
+    return rois
 
 
 def parse_arguments():
