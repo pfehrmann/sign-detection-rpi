@@ -1,4 +1,3 @@
-import sys
 import cv2
 
 import sign_detection.GTSRB.use_net as un
