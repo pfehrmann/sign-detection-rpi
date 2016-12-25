@@ -4,17 +4,22 @@ import timeit
 
 
 def load_net(model, weights):
-    caffe.set_mode_cpu()
 
     net = caffe.Net(model, weights, caffe.TEST)
 
     # load input and configure preprocessing
     transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
     transformer.set_transpose('data', (2, 0, 1))
-    transformer.set_channel_swap('data', (2, 1, 0))
-    transformer.set_raw_scale('data', 255.0)
+    #transformer.set_channel_swap('data', (2, 1, 0))
+    #transformer.set_raw_scale('data', 0.3)
     return net, transformer
 
+def setup_device(gpu=True, device=0):
+    if gpu:
+        caffe.set_mode_gpu()
+        caffe.set_device(device)
+    else:
+        caffe.set_mode_cpu()
 
 def supply_image(image_array, net, transformer):
     net.blobs['data'].data[...] = transformer.preprocess('data', image_array)
@@ -26,13 +31,13 @@ def load_image(image_path, net, transformer):
     return supply_image(im, net, transformer)
 
 
-def compute(net):
+def compute(net, out_layer="loss"):
     # compute
     out = net.forward()
 
     # predicted predicted class
-    class_index = out['loss'].argmax()
-    return class_index, out['loss'][0][class_index]
+    class_index = out[out_layer].argmax()
+    return class_index, out[out_layer][0][class_index]
 
 
 def get_name_from_category(category):
