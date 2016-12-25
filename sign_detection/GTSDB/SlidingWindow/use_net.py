@@ -32,6 +32,21 @@ def load_image(image_path, factor=255.0*0.3):
 
 
 def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.99, x=lambda x: 1-x/7, overlap=0.65, factor=255.0*0.3):
+    """
+    Load and process a net and image
+    :param model: The path to the prototxt model definition
+    :param weights: The path to the caffemodel weights file
+    :param image_path: The path to the image
+    :param gpu: Use the GPU? Default is true
+    :param minimum: The minimum probability of a class. Everything below is discarded
+    :param x: The scaling function.
+    :param overlap: The overlap factor. Lower means that less images are produced. Higher means more images are
+    produced. Should be in range [0, 1).
+    :param factor: The facor to multiply the image with. Use this to prevent over stimulation.
+    :return: Returns all the found ROIs as a list of PossibleROI elements.
+    :returns: list[PossibleROI]
+    """
+
     # initialize net and image
     net = initialize_net(model, weights, gpu)
     im, unmodified = load_image(image_path, factor)
