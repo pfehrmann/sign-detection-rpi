@@ -21,8 +21,16 @@ def setup_device(gpu=True, device=0):
     else:
         caffe.set_mode_cpu()
 
-def supply_image(image_array, net, transformer):
-    net.blobs['data'].data[...] = transformer.preprocess('data', image_array)
+def supply_image(image_array, net, transformer=None, width=64, height=64):
+    if transformer is None:
+        if width is None:
+            width = image_array.shape[1]
+        if height is None:
+            height = image_array.shape[2]
+        net.blobs['data'].reshape(1, 3, width, height)
+        net.blobs['data'].data[...] = image_array
+    else:
+        net.blobs['data'].data[...] = transformer.preprocess('data', image_array)
     return net
 
 def load_image(image_path, net, transformer):
