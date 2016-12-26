@@ -3,6 +3,7 @@ import argparse
 
 import numpy as np
 import cv2
+from time import time
 from sign_detection.model.PossibleROI import PossibleROI
 
 from sign_detection.model.ScalingSlidingWindow import ScalingSlidingWindow
@@ -47,6 +48,7 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
     :returns: list[PossibleROI]
     """
 
+    start = time()
     # initialize net and image
     net = initialize_net(model, weights, gpu)
     im, unmodified = load_image(image_path, factor)
@@ -54,6 +56,8 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
     # load image to the net
     rois = identify_regions(net, im, minimum, overlap=overlap, x=x)
 
+    end = time()
+    print "Time: " + str(end-start)
     for roi in rois:
         cv2.rectangle(unmodified, (roi.x1, roi.y1), (roi.x2, roi.y2), color=(0, 0, 1), thickness=2)
 

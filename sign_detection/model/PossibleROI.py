@@ -11,3 +11,7 @@ class PossibleROI(RegionOfInterest):
     @probability.setter
     def probability(self, value):
         self._probability = value
+
+    @probability.getter
+    def probability(self):
+        return self._probability
