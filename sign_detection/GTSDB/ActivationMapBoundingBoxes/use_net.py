@@ -10,16 +10,18 @@ from matplotlib import pyplot as plt
 from sign_detection.model.Sign import get_name_from_category
 
 
-def initialize_net(model, weights, gpu=True):
+def load_net(model, weights, gpu=True):
+    # load and return the net
+    return caffe.Net(model, weights, caffe.TEST)
+
+
+def setup_device(gpu=True):
     # use either cpu or gpu
     if gpu:
         caffe.set_device(0)
         caffe.set_mode_gpu()
     else:
         caffe.set_mode_cpu()
-
-    # load and return the net
-    return caffe.Net(model, weights, caffe.TEST)
 
 
 def load_image(image_path, factor=255.0 * 0.3):
@@ -31,10 +33,10 @@ def load_image(image_path, factor=255.0 * 0.3):
     return im * factor, im
 
 
-def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.99, factor=255.0 * 0.3,
-                                use_global_max=True, threshold_factor=0.5, draw_results=False, zoom=[1, 2, 3],
-                                area_threshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
-                                out_layer="softmax", display_activation=False, blur_radius=1):
+def identify_regions_from_image_path(model, weights, image_path, gpu=True, minimum=0.99, factor=255.0 * 0.3,
+                                     use_global_max=True, threshold_factor=0.5, draw_results=False, zoom=[1, 2, 3],
+                                     area_threshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
+                                     out_layer="softmax", display_activation=False, blur_radius=1):
     """
     Load and process a net and image
     :param blur_radius: If > 1 the activation map will be blurred by the radius
@@ -58,9 +60,44 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
     :returns: list[PossibleROI]
     """
 
+    # initialize caffe
+    setup_device(gpu)
+
     # initialize net and image
-    net = initialize_net(model, weights, gpu)
+    net = load_net(model, weights, gpu)
     im, unmodified = load_image(image_path, factor)
+    return identify_regions_from_image(im=im, unmodified=unmodified, net=net, minimum=minimum,
+                                       use_global_max=use_global_max,
+                                       threshold_factor=threshold_factor, draw_results=draw_results, zoom=zoom,
+                                       area_threshold_min=area_threshold_min, area_thrshold_max=area_thrshold_max,
+                                       activation_layer=activation_layer, out_layer=out_layer,
+                                       display_activation=display_activation, blur_radius=blur_radius)
+
+
+def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
+                                draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_thrshold_max=10000,
+                                activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1):
+    """
+    Load and process a net and image
+    :param net: The net to use
+    :param unmodified: The unmodified version of the image to draw on
+    :param im: The image to work with
+    :param blur_radius: If > 1 the activation map will be blurred by the radius
+    :param display_activation: If true all the activations will be displayed
+    :param out_layer: The layer that yields the class
+    :param activation_layer: The layer that yields the activation map
+    :param area_thrshold_max: Maximum size of a region
+    :param area_threshold_min: Minimum size of a region
+    :param zoom: The factors to zoom into the image
+    :param minimum: The minimum probability of a class. Everything below is discarded
+    produced. Should be in range [0, 1).
+    :param factor: The facor to multiply the image with. Use this to prevent over stimulation.
+    :param use_global_max: Use the global maximum or use local maxima of filters?
+    :param threshold_factor: The threshold is defined by the maximum * threshold_factor
+    :param draw_results: This outputs the found results visibly
+    :return: Returns all the found ROIs as a list of PossibleROI elements.
+    :returns: list[PossibleROI]
+    """
 
     start = time()
 
@@ -93,19 +130,19 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
     # filter all the rois with a too low possibility
     rois = [roi for roi in unfiltered_rois if roi.probability >= minimum]
 
+    end = time()
+    print "Total time: " + str(end - start)
+
     if draw_results:
         draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
         draw_regions(rois, unmodified, (0, 0, 1))
 
-    end = time()
-    print "Total time: " + str(end - start)
+        # show the image and delay the execution
+        cv2.imshow("ROIs", unmodified)
+        cv2.waitKey(1000000)
 
-    # show the image and delay the execution
-    cv2.imshow("ROIs", unmodified)
-    cv2.waitKey(1000000)
-
-    # save the image. Needs mapping to [0,255]
-    cv2.imwrite("result.png", unmodified * 255.0)
+        # save the image. Needs mapping to [0,255]
+        cv2.imwrite("result.png", unmodified * 255.0)
     return rois
 
 
@@ -298,11 +335,11 @@ def parse_arguments():
 
 # parse_arguments()
 if __name__ == "__main__":
-    regions = identify_regions_from_image(
+    regions = identify_regions_from_image_path(
         "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
         "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel",
         "C:/development/FullIJCNN2013/FullIJCNN2013/00000.ppm", minimum=0.999, factor=255 * 0.15, use_global_max=True,
-        threshold_factor=0.5, draw_results=False, zoom=[1, 3, 6], area_threshold_min=600, area_thrshold_max=50000,
+        threshold_factor=0.5, draw_results=True, zoom=[1, 3, 6], area_threshold_min=600, area_thrshold_max=50000,
         activation_layer="activation", display_activation=False, gpu=True, blur_radius=1)
 
     for roi in regions:
