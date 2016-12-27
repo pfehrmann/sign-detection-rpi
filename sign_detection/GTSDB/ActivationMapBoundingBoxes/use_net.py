@@ -33,10 +33,17 @@ def load_image(image_path, factor=255.0 * 0.3):
 
 def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.99, factor=255.0 * 0.3,
                                 use_global_max=True, threshold_factor=0.5, draw_results=False, zoom=[1, 2, 3],
-                                area_thrshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
+                                area_threshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
                                 out_layer="softmax", display_activation=False, blur_radius=1):
     """
     Load and process a net and image
+    :param blur_radius: If > 1 the activation map will be blurred by the radius
+    :param display_activation: If true all the activations will be displayed
+    :param out_layer: The layer that yields the class
+    :param activation_layer: The layer that yields the activation map
+    :param area_thrshold_max: Maximum size of a region
+    :param area_threshold_min: Minimum size of a region
+    :param zoom: The factors to zoom into the image
     :param model: The path to the prototxt model definition
     :param weights: The path to the caffemodel weights file
     :param image_path: The path to the image
@@ -62,12 +69,9 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
     for step in zoom:
         factor = 1.0 / step
         resized = cv2.resize(im, None, fx=factor, fy=factor)
-        new_regions = identify_regions(net, resized, use_global_max=use_global_max,
-                                       threshold_factor=threshold_factor,
-                                       draw_results=draw_results, area_threshold_min=area_thrshold_min,
-                                       area_threshold_max=area_thrshold_max,
-                                       activation_layer=activation_layer,
-                                       display_activation=display_activation,
+        new_regions = identify_regions(net, resized, use_global_max=use_global_max, threshold_factor=threshold_factor,
+                                       area_threshold_min=area_threshold_min, area_threshold_max=area_thrshold_max,
+                                       activation_layer=activation_layer, display_activation=display_activation,
                                        blur_radius=blur_radius)
 
         for roi in new_regions:
@@ -89,14 +93,9 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
     # filter all the rois with a too low possibility
     rois = [roi for roi in unfiltered_rois if roi.probability >= minimum]
 
-    if True or draw_results:
-        for roi in unfiltered_rois:
-            cv2.rectangle(unmodified, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=(0, 1, 0),
-                          thickness=2)
-
-    # draw the regions
-    for roi in rois:
-        cv2.rectangle(unmodified, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=(0, 0, 1), thickness=2)
+    if draw_results:
+        draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
+        draw_regions(rois, unmodified, (0, 0, 1))
 
     end = time()
     print "Total time: " + str(end - start)
@@ -127,7 +126,7 @@ def filter_rois(rois, max_overlap):
 
 
 def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", use_global_max=True,
-                     threshold_factor=0.5, draw_results=False, area_threshold_min=49, area_threshold_max=10000,
+                     threshold_factor=0.5, area_threshold_min=49, area_threshold_max=10000,
                      display_activation=False, blur_radius=1):
     """
     Identify regions in an image.
@@ -173,7 +172,6 @@ def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", 
         display_activation_maps(activation)
 
     for filter_index in range(len(activation[0])):
-
         # analyze image
         filter = activation[0][filter_index]
         regions, contours = __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_factor,
@@ -181,9 +179,6 @@ def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", 
                                                       area_threshold_max=area_threshold_max, blur_radius=blur_radius)
 
         rois.extend(regions)
-
-        if draw_results:
-            draw_contours(filter, contours)
 
     # reset the shape
     net.blobs['data'].reshape(original_shape[0], original_shape[1], original_shape[2], original_shape[3])
@@ -193,9 +188,9 @@ def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", 
     return rois
 
 
-def __draw_regions(rois, image):
+def draw_regions(rois, image, color=(0, 0, 1)):
     for roi in rois:
-        cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=(0, 0, 1), thickness=2)
+        cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=color, thickness=2)
 
 
 def display_activation_maps(layer_blob):
@@ -307,9 +302,8 @@ if __name__ == "__main__":
         "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
         "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel",
         "C:/development/FullIJCNN2013/FullIJCNN2013/00000.ppm", minimum=0.999, factor=255 * 0.15, use_global_max=True,
-        threshold_factor=0.5, draw_results=False, zoom=[1, 3, 6], area_thrshold_min=600, area_thrshold_max=50000,
-        activation_layer="activation",
-        display_activation=False, gpu=True, blur_radius=1)
+        threshold_factor=0.5, draw_results=False, zoom=[1, 3, 6], area_threshold_min=600, area_thrshold_max=50000,
+        activation_layer="activation", display_activation=False, gpu=True, blur_radius=1)
 
     for roi in regions:
         print get_name_from_category(roi.sign) + " (" + str(roi.probability) + ") @({},{}), ({},{})".format(roi.x1,
