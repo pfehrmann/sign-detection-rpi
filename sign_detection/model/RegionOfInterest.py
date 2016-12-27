@@ -97,6 +97,14 @@ class RegionOfInterest(object):
                   * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
         return overlap / area
 
+    def increase_size(self, factor):
+        dx = self.width * factor / 2
+        dy = self.height * factor / 2
+        self.x1 -= dx
+        self.x2 += dx
+        self.y1 -= dy
+        self.y2 += dy
+
     def area(self):
         return (self.x1 - self.x2) * (self.y1 - self.y2)
 

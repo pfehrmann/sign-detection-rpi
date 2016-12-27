@@ -3,6 +3,7 @@ import argparse
 
 import numpy as np
 import cv2
+from sign_detection.model.RegionOfInterest import RegionOfInterest
 from sign_detection.model.PossibleROI import PossibleROI
 from time import time
 from matplotlib import pyplot as plt
@@ -32,7 +33,8 @@ def load_image(image_path, factor=255.0 * 0.3):
 
 def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.99, factor=255.0 * 0.3,
                                 use_global_max=True, threshold_factor=0.5, draw_results=False, zoom=[1, 2, 3],
-                                area_thrshold=49, activation_layer="conv3", out_layer="softmax", display_activation=False):
+                                area_thrshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
+                                out_layer="softmax", display_activation=False, blur_radius=1):
     """
     Load and process a net and image
     :param model: The path to the prototxt model definition
@@ -62,9 +64,11 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
         resized = cv2.resize(im, None, fx=factor, fy=factor)
         new_regions = identify_regions(net, resized, use_global_max=use_global_max,
                                        threshold_factor=threshold_factor,
-                                       draw_results=draw_results, area_threshold=area_thrshold,
+                                       draw_results=draw_results, area_threshold_min=area_thrshold_min,
+                                       area_threshold_max=area_thrshold_max,
                                        activation_layer=activation_layer,
-                                       display_activation=display_activation)
+                                       display_activation=display_activation,
+                                       blur_radius=blur_radius)
 
         for roi in new_regions:
             roi.x1 *= step
@@ -75,7 +79,8 @@ def identify_regions_from_image(model, weights, image_path, gpu=True, minimum=0.
         overlapping_rois.extend(new_regions)
 
     # remove overlapping regions
-    unfiltered_rois = filter_rois(overlapping_rois, max_overlap=0.20)
+    # unfiltered_rois = filter_rois(overlapping_rois, max_overlap=0.75)
+    unfiltered_rois = overlapping_rois
     print "Checking {} rois".format(len(unfiltered_rois))
 
     # check each roi individually
@@ -111,7 +116,7 @@ def filter_rois(rois, max_overlap):
     for roi in rois:
         keep = True
         for other in all_regions:
-            if roi is not other and roi.get_overlap(other) > max_overlap and roi.area >= other.area:
+            if roi is not other and roi.area <= other.area and roi.get_overlap(other) > max_overlap:
                 keep = False
                 break
         if keep:
@@ -122,11 +127,12 @@ def filter_rois(rois, max_overlap):
 
 
 def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", use_global_max=True,
-                     threshold_factor=0.5, draw_results=False, area_threshold=49, display_activation=False):
+                     threshold_factor=0.5, draw_results=False, area_threshold_min=49, area_threshold_max=10000,
+                     display_activation=False, blur_radius=1):
     """
     Identify regions in an image.
     :param display_activation: If True all activation maps will be displayed
-    :param area_threshold: The minimum size of an area
+    :param area_threshold_min: The minimum size of an area
     :param net: The net
     :param image: The image array
     :param out_layer: The layer yielding the results of the net
@@ -171,7 +177,8 @@ def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", 
         # analyze image
         filter = activation[0][filter_index]
         regions, contours = __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_factor,
-                                                      use_global_max, area_threshold=area_threshold)
+                                                      use_global_max, area_threshold_min=area_threshold_min,
+                                                      area_threshold_max=area_threshold_max, blur_radius=blur_radius)
 
         rois.extend(regions)
 
@@ -203,7 +210,7 @@ def display_activation_maps(layer_blob):
 
 
 def __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_factor,
-                              use_global_max, area_threshold=49):
+                              use_global_max, area_threshold_min=49, area_threshold_max=10000, blur_radius=1):
     rois = []
     max_value = filter.max()
     if use_global_max:
@@ -215,7 +222,8 @@ def __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_
     ret, thresh = cv2.threshold(filter, threshold_value, 0, 3)
 
     # blur the image to produce better results
-    # blur = cv2.blur(thresh, (1, 1))
+    if blur_radius > 1:
+        thresh = cv2.blur(thresh, (blur_radius, blur_radius))
 
     # extract the contours
     converted = np.array(thresh / max_value * 255, dtype=np.uint8)
@@ -227,7 +235,7 @@ def __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_
         h = max(abs(w), abs(h))
         w = max(abs(w), abs(h))
         area = w * h * factor_x * factor_y
-        if area >= area_threshold:
+        if area >= area_threshold_min and area <= area_threshold_max:
             # append the found roi to the list of rois
             rois.append(PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0))
     return rois, contours
@@ -235,7 +243,14 @@ def __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_
 
 def __check_rois(image, net, original_shape, out_layer, rois):
     for roi in rois:
-        crop_img = image[roi.y1:roi.y2, roi.x1:roi.x2]
+        copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
+        copy.increase_size(0.4)
+        copy.x1 = max(0, copy.x1)
+        copy.y1 = max(0, copy.y1)
+        copy.x2 = min(image.shape[1], copy.x2)
+        copy.y2 = min(image.shape[0], copy.y2)
+
+        crop_img = image[copy.y1:copy.y2, copy.x1:copy.x2]
         crop_img = caffe.io.resize_image(crop_img, (original_shape[2], original_shape[3]))
         caffe_in = crop_img.transpose((2, 0, 1))
         net.blobs['data'].data[...] = caffe_in
@@ -291,9 +306,10 @@ if __name__ == "__main__":
     regions = identify_regions_from_image(
         "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
         "C:/Users/phili/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel",
-        "C:/development/FullIJCNN2013/FullIJCNN2013/00040.ppm", minimum=0.999, factor=255 * 0.15, use_global_max=True,
-        threshold_factor=0.5, draw_results=False, zoom=[1, 3, 6], area_thrshold=300, activation_layer="activation",
-        display_activation=False, gpu=True)
+        "C:/development/FullIJCNN2013/FullIJCNN2013/00000.ppm", minimum=0.999, factor=255 * 0.15, use_global_max=True,
+        threshold_factor=0.5, draw_results=False, zoom=[1, 3, 6], area_thrshold_min=600, area_thrshold_max=50000,
+        activation_layer="activation",
+        display_activation=False, gpu=True, blur_radius=1)
 
     for roi in regions:
         print get_name_from_category(roi.sign) + " (" + str(roi.probability) + ") @({},{}), ({},{})".format(roi.x1,
