@@ -76,9 +76,11 @@ def identify_regions_from_image_path(model, weights, image_path, gpu=True, minim
 
 def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                                 draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_thrshold_max=10000,
-                                activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1):
+                                activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
+                                size_factor=0.4):
     """
     Load and process a net and image
+    :param size_factor: Increasing the boxes by this amount before checking them
     :param net: The net to use
     :param unmodified: The unmodified version of the image to draw on
     :param im: The image to work with
@@ -125,7 +127,7 @@ def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_ma
     print "Checking {} rois".format(len(unfiltered_rois))
 
     # check each roi individually
-    __check_rois(im, net, net.blobs['data'].shape, out_layer, unfiltered_rois)
+    __check_rois(im, net, net.blobs['data'].shape, out_layer, unfiltered_rois, size_factor=size_factor)
 
     # filter all the rois with a too low possibility
     rois = [roi for roi in unfiltered_rois if roi.probability >= minimum]
@@ -143,7 +145,7 @@ def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_ma
 
         # save the image. Needs mapping to [0,255]
         cv2.imwrite("result.png", unmodified * 255.0)
-    return rois
+    return rois, unfiltered_rois
 
 
 def filter_rois(rois, max_overlap):
@@ -273,16 +275,16 @@ def __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_
     return rois, contours
 
 
-def __check_rois(image, net, original_shape, out_layer, rois):
+def __check_rois(image, net, original_shape, out_layer, rois, size_factor=0.4):
     for roi in rois:
         copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
-        copy.increase_size(0.4)
+        copy.increase_size(size_factor)
         copy.x1 = max(0, copy.x1)
         copy.y1 = max(0, copy.y1)
         copy.x2 = min(image.shape[1], copy.x2)
         copy.y2 = min(image.shape[0], copy.y2)
 
-        crop_img = image[copy.y1:copy.y2, copy.x1:copy.x2]
+        crop_img = np.array(image[copy.y1:copy.y2, copy.x1:copy.x2], dtype=np.float16)
         crop_img = caffe.io.resize_image(crop_img, (original_shape[2], original_shape[3]))
         caffe_in = crop_img.transpose((2, 0, 1))
         net.blobs['data'].data[...] = caffe_in
