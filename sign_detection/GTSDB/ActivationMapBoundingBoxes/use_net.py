@@ -236,8 +236,8 @@ def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
             retval, base_line = cv2.getTextSize(str(roi.sign), cv2.FONT_HERSHEY_PLAIN, 1, 1)
             dx = retval[0]
             dy = retval[1]
-            cv2.rectangle(image, (int(roi.x1), int(roi.y2)), (int(roi.x1 + dx), int(roi.y2 - dy)), color, thickness=cv2.FILLED)
-            cv2.putText(image, str(roi.sign), (int(roi.x1), int(roi.y2)), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0))
+            cv2.rectangle(image, (int(roi.x1), int(roi.y2)), (int(roi.x1 + dx + 2), int(roi.y2 - dy - 2)), color, thickness=cv2.FILLED)
+            cv2.putText(image, str(roi.sign), (int(roi.x1 + 1), int(roi.y2 - 1)), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0))
 
 
 def display_activation_maps(layer_blob):
