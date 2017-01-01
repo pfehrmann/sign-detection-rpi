@@ -22,9 +22,8 @@ def identify_regions(save=False, gpu=True):
     # see the opencv documentation for a definition of the constants
     # cap.set(cv2.CAP_PROP_EXPOSURE, -3.0)  # set exposure so we don't have to scale the image
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, True)
-    # cap.set(5, 60)  # set framerate
-    cap.set(cv2.CAP_PROP_BRIGHTNESS, -40)
-    cap.set(16, True)  # set convert to rgb
+    cap.set(cv2.CAP_PROP_BRIGHTNESS, -60)
+    cap.set(cv2.CAP_PROP_CONVERT_RGB, True)  # set convert to rgb
 
     while True:
         start = time()
@@ -37,7 +36,7 @@ def identify_regions(save=False, gpu=True):
                                                           threshold_factor=0.75, draw_results=False, zoom=[0.5, 1, 2],
                                                           area_threshold_min=2000, area_thrshold_max=30000,
                                                           activation_layer="activation", out_layer="softmax",
-                                                          display_activation=False, blur_radius=1, size_factor=0.3)
+                                                          display_activation=False, blur_radius=1, size_factor=0.5)
 
         end = time()
 
