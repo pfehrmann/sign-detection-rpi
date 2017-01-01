@@ -122,8 +122,10 @@ def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_ma
         overlapping_rois.extend(new_regions)
 
     # remove overlapping regions
-    # unfiltered_rois = filter_rois(overlapping_rois, max_overlap=0.75)
-    unfiltered_rois = overlapping_rois
+    if len(overlapping_rois) < 20:
+        unfiltered_rois = filter_rois(overlapping_rois, max_overlap=0.2)
+    else:
+        unfiltered_rois = overlapping_rois
     print "Checking {} rois".format(len(unfiltered_rois))
 
     # check each roi individually
@@ -133,7 +135,7 @@ def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_ma
     rois = [roi for roi in unfiltered_rois if roi.probability >= minimum]
 
     end = time()
-    print "Total time: " + str(end - start)
+    # print "Total time: " + str(end - start)
 
     if draw_results:
         draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
@@ -223,13 +225,19 @@ def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", 
     net.blobs['data'].reshape(original_shape[0], original_shape[1], original_shape[2], original_shape[3])
 
     # Show some information about the regions
-    print "Number Regions: " + str(len(rois))
+    # print "Number Regions: " + str(len(rois))
     return rois
 
 
-def draw_regions(rois, image, color=(0, 0, 1)):
+def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
     for roi in rois:
         cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=color, thickness=2)
+        if print_class:
+            retval, base_line = cv2.getTextSize(str(roi.sign), cv2.FONT_HERSHEY_PLAIN, 1, 1)
+            dx = retval[0]
+            dy = retval[1]
+            cv2.rectangle(image, (int(roi.x1), int(roi.y2)), (int(roi.x1 + dx), int(roi.y2 - dy)), color, thickness=cv2.FILLED)
+            cv2.putText(image, str(roi.sign), (int(roi.x1), int(roi.y2)), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0))
 
 
 def display_activation_maps(layer_blob):
@@ -277,16 +285,7 @@ def __get_regions_from_filter(factor_x, factor_y, filter, global_max, threshold_
 
 def __check_rois(image, net, original_shape, out_layer, rois, size_factor=0.4):
     for roi in rois:
-        copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
-        copy.increase_size(size_factor)
-        copy.x1 = max(0, copy.x1)
-        copy.y1 = max(0, copy.y1)
-        copy.x2 = min(image.shape[1], copy.x2)
-        copy.y2 = min(image.shape[0], copy.y2)
-
-        crop_img = np.array(image[copy.y1:copy.y2, copy.x1:copy.x2], dtype=np.float16)
-        crop_img = caffe.io.resize_image(crop_img, (original_shape[2], original_shape[3]))
-        caffe_in = crop_img.transpose((2, 0, 1))
+        caffe_in = __prepare_image(image, original_shape, roi, size_factor)
         net.blobs['data'].data[...] = caffe_in
         out = net.forward()
 
@@ -296,6 +295,24 @@ def __check_rois(image, net, original_shape, out_layer, rois, size_factor=0.4):
 
         roi.probability = possibility
         roi.sign = class_index
+
+
+def __prepare_image(image, original_shape, roi, size_factor):
+    crop_img = __crop_image(image, roi, size_factor)
+    crop_img = caffe.io.resize_image(crop_img, (original_shape[2], original_shape[3]))
+    caffe_in = crop_img.transpose((2, 0, 1))
+    return caffe_in
+
+
+def __crop_image(image, roi, size_factor):
+    copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
+    copy.increase_size(size_factor)
+    copy.x1 = max(0, copy.x1)
+    copy.y1 = max(0, copy.y1)
+    copy.x2 = min(image.shape[1], copy.x2)
+    copy.y2 = min(image.shape[0], copy.y2)
+    crop_img = np.array(image[copy.y1:copy.y2, copy.x1:copy.x2], dtype=np.float16)
+    return crop_img
 
 
 def draw_contours(image, contours):
