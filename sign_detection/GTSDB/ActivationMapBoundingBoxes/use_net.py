@@ -110,8 +110,8 @@ class Detector:
         return overlapping_rois
 
     def draw_results_to_image(self, rois, unfiltered_rois, unmodified):
-        self.draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
-        self.draw_regions(rois, unmodified, (0, 0, 1))
+        draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
+        draw_regions(rois, unmodified, (0, 0, 1))
         # show the image and delay the execution
         cv2.imshow("ROIs", unmodified)
         cv2.waitKey(1000000)
@@ -184,18 +184,6 @@ class Detector:
         # print "Number Regions: " + str(len(rois))
         return rois
 
-    def draw_regions(self, rois, image, color=(0, 0, 1), print_class=False):
-        for roi in rois:
-            cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=color, thickness=2)
-            if print_class:
-                retval, base_line = cv2.getTextSize(str(roi.sign), cv2.FONT_HERSHEY_PLAIN, 1, 1)
-                dx = retval[0]
-                dy = retval[1]
-                cv2.rectangle(image, (int(roi.x1), int(roi.y2)), (int(roi.x1 + dx + 2), int(roi.y2 - dy - 2)), color,
-                              thickness=cv2.FILLED)
-                cv2.putText(image, str(roi.sign), (int(roi.x1 + 1), int(roi.y2 - 1)), cv2.FONT_HERSHEY_PLAIN, 1,
-                            (0, 0, 0))
-
     def display_activation_maps(self, layer_blob):
         plot = 1
         count_plots = layer_blob.shape[1]
@@ -256,6 +244,18 @@ def _prepare_image(image, original_shape, roi, size_factor):
     caffe_in = crop_img.transpose((2, 0, 1))
     return caffe_in
 
+
+def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
+    for roi in rois:
+        cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=color, thickness=2)
+        if print_class:
+            retval, base_line = cv2.getTextSize(str(roi.sign), cv2.FONT_HERSHEY_PLAIN, 1, 1)
+            dx = retval[0]
+            dy = retval[1]
+            cv2.rectangle(image, (int(roi.x1), int(roi.y2)), (int(roi.x1 + dx + 2), int(roi.y2 - dy - 2)), color,
+                          thickness=cv2.FILLED)
+            cv2.putText(image, str(roi.sign), (int(roi.x1 + 1), int(roi.y2 - 1)), cv2.FONT_HERSHEY_PLAIN, 1,
+                        (0, 0, 0))
 
 def __crop_image(image, roi, size_factor):
     copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
