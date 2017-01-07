@@ -306,7 +306,7 @@ def __crop_image(image, roi, size_factor):
     copy.y1 = max(0, copy.y1)
     copy.x2 = min(image.shape[1], copy.x2)
     copy.y2 = min(image.shape[0], copy.y2)
-    crop_img = np.array(image[copy.y1:copy.y2, copy.x1:copy.x2], dtype=np.float16)
+    crop_img = np.array(image[int(copy.y1):int(copy.y2), int(copy.x1):int(copy.x2)], dtype=np.float16)
     return crop_img
 
 
