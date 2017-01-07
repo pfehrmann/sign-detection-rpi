@@ -24,6 +24,8 @@ def identify_regions(save=False, gpu=True):
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, True)
     cap.set(cv2.CAP_PROP_BRIGHTNESS, -60)
     cap.set(cv2.CAP_PROP_CONVERT_RGB, True)  # set convert to rgb
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
     while True:
         start = time()
@@ -32,11 +34,11 @@ def identify_regions(save=False, gpu=True):
         ret, img = cap.read()
 
         # pass the image through the net
-        rois, unfiltered = un.identify_regions_from_image(img, img, net, minimum=0.9999, use_global_max=True,
-                                                          threshold_factor=0.75, draw_results=False, zoom=[0.5, 1, 2],
+        rois, unfiltered = un.identify_regions_from_image(img, img, net, minimum=0.9999, use_global_max=False,
+                                                          threshold_factor=0.75, draw_results=False, zoom=[1],
                                                           area_threshold_min=2000, area_thrshold_max=30000,
                                                           activation_layer="activation", out_layer="softmax",
-                                                          display_activation=False, blur_radius=1, size_factor=0.5)
+                                                          display_activation=False, blur_radius=1, size_factor=0.4)
 
         end = time()
 
