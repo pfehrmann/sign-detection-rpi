@@ -12,6 +12,7 @@ class Detector:
     """
     Use this lass to detect signs using a method similar to Faster RCNNs
     """
+
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
                  activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
@@ -255,6 +256,7 @@ def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
             cv2.putText(image, str(roi.sign), (int(roi.x1 + 1), int(roi.y2 - 1)), cv2.FONT_HERSHEY_PLAIN, 1,
                         (0, 0, 0))
 
+
 def __crop_image(image, roi, size_factor):
     copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
     copy.increase_size(size_factor)
@@ -351,12 +353,12 @@ def identify_regions_from_image_path(model, weights, image_path, gpu=True, minim
     net = load_net(model, weights)
     im, unmodified = load_image(image_path, factor)
     detector = Detector(net, minimum=minimum,
-                                            use_global_max=use_global_max,
-                                            threshold_factor=threshold_factor, draw_results=draw_results, zoom=zoom,
-                                            area_threshold_min=area_threshold_min,
-                                            area_threshold_max=area_thrshold_max,
-                                            activation_layer=activation_layer, out_layer=out_layer,
-                                            display_activation=display_activation, blur_radius=blur_radius)
+                        use_global_max=use_global_max,
+                        threshold_factor=threshold_factor, draw_results=draw_results, zoom=zoom,
+                        area_threshold_min=area_threshold_min,
+                        area_threshold_max=area_thrshold_max,
+                        activation_layer=activation_layer, out_layer=out_layer,
+                        display_activation=display_activation, blur_radius=blur_radius)
     return detector.identify_regions_from_image(im=im, unmodified=unmodified)
 
 
