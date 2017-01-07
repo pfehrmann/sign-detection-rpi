@@ -101,8 +101,6 @@ def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_ma
     :returns: list[PossibleROI]
     """
 
-    start = time()
-
     # collect all the regions of interest
     overlapping_rois = []
     for step in zoom:
@@ -133,9 +131,6 @@ def identify_regions_from_image(im, unmodified, net, minimum=0.99, use_global_ma
 
     # filter all the rois with a too low possibility
     rois = [roi for roi in unfiltered_rois if roi.probability >= minimum]
-
-    end = time()
-    # print "Total time: " + str(end - start)
 
     if draw_results:
         draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
@@ -201,7 +196,7 @@ def identify_regions(net, image, out_layer='softmax', activation_layer="conv3", 
 
     # set the data and forward
     net.blobs['data'].data[...] = caffe_in
-    out = net.forward(blobs=[out_layer, activation_layer])
+    out = net.forward(blobs=[out_layer, activation_layer], end=activation_layer)
 
     # get the activation for the proposals from the activation layer
     activation = out[activation_layer]
