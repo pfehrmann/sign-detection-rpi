@@ -13,7 +13,13 @@ def identify_regions(save=False, gpu=True):
         out = cv2.VideoWriter('output.avi', fourcc, 2.5, (640, 480))
 
     # Setup the net and transformer
-    net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "../GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
+    net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
+                      "../GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
+
+    # setup the detector
+    detector = un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75, draw_results=False,
+                           zoom=[1], area_threshold_min=2000, area_threshold_max=30000, activation_layer="activation",
+                           out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.4)
 
     # capture from camera at location 0
     cap = cv2.VideoCapture(0)
@@ -34,18 +40,15 @@ def identify_regions(save=False, gpu=True):
         ret, img = cap.read()
 
         # pass the image through the net
-        rois, unfiltered = un.identify_regions_from_image(img, img, net, minimum=0.9999, use_global_max=False,
-                                                          threshold_factor=0.75, draw_results=False, zoom=[1],
-                                                          area_threshold_min=2000, area_thrshold_max=30000,
-                                                          activation_layer="activation", out_layer="softmax",
-                                                          display_activation=False, blur_radius=1, size_factor=0.4)
+        rois, unfiltered = detector.identify_regions_from_image(img, img)
 
         end = time()
 
         # Show the regions
         un.draw_regions(unfiltered, img, (0, 255, 0))
         un.draw_regions(rois, img, (0, 0, 255), print_class=True)
-        cv2.putText(img, "{} fps".format(1.0/(end-start)), (5, img.shape[0] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (255, 0, 0), 1)
+        cv2.putText(img, "{} fps".format(1.0 / (end - start)), (5, img.shape[0] - 10), cv2.FONT_HERSHEY_PLAIN, 1,
+                    (255, 0, 0), 1)
         cv2.imshow("Detection", img)
 
         if save:
