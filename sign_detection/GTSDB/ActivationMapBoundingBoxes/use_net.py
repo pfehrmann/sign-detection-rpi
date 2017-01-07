@@ -136,11 +136,9 @@ class Detector:
     def identify_regions(self, image):
         """
         Identify regions in an image.
-        :param net: The net
         :param image: The image array
         :return: A list of rois with probabilities
         :returns: list[PossibleROI]
-        :type net: caffe.Net
         """
 
         # return parameters
