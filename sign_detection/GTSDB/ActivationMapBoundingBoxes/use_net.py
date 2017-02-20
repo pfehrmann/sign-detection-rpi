@@ -107,7 +107,8 @@ class Detector:
 
         return overlapping_rois
 
-    def draw_results_to_image(self, rois, unfiltered_rois, unmodified):
+    @staticmethod
+    def draw_results_to_image(rois, unfiltered_rois, unmodified):
         draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
         draw_regions(rois, unmodified, (0, 0, 1))
         # show the image and delay the execution
