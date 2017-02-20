@@ -16,7 +16,7 @@ class Detector:
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
                  activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
-                 size_factor=0.4, max_overlap=0.2):
+                 size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1", faster_rcnn=False):
         """
 
         :param net: The net to use
@@ -49,6 +49,8 @@ class Detector:
         self.use_global_max = use_global_max
         self.minimum = minimum
         self.net = net
+        self.global_pooling_layer = global_pooling_layer
+        self.faster_rcnn = faster_rcnn
 
     def identify_regions_from_image(self, im, unmodified):
         """
@@ -70,7 +72,7 @@ class Detector:
         self._check_rois(im, unfiltered_rois)
 
         # filter all the rois with a too low possibility
-        rois = [roi for roi in unfiltered_rois if roi.probability >= self.minimum]
+        rois = [roi for roi, activation_map in unfiltered_rois if roi.probability >= self.minimum]
 
         if self.draw_results:
             self.draw_results_to_image(rois, unfiltered_rois, unmodified)
@@ -82,10 +84,7 @@ class Detector:
         :param overlapping_rois: The regions to go though
         :return: Returns an array of regions
         """
-        if len(overlapping_rois) < 20:
-            unfiltered_rois = self.filter_rois(overlapping_rois)
-        else:
-            unfiltered_rois = overlapping_rois
+        unfiltered_rois = self.filter_rois(overlapping_rois)
         return unfiltered_rois
 
     def collect_regions(self, im):
@@ -98,19 +97,20 @@ class Detector:
         for step in self.zoom:
             factor = 1.0 / step
             resized = cv2.resize(im, None, fx=factor, fy=factor)
-            new_regions = self.identify_regions(resized)
+            new_regions, activation_maps = self.identify_regions(resized)
 
             for new_region in new_regions:
                 new_region.x1 *= step
                 new_region.x2 *= step
                 new_region.y1 *= step
                 new_region.y2 *= step
-
-            overlapping_rois.extend(new_regions)
+                new_region.zoom_factor = (new_region.zoom_factor[0] * step, new_region.zoom_factor[1] * step)
+                overlapping_rois.append((new_region, activation_maps))
 
         return overlapping_rois
 
-    def draw_results_to_image(self, rois, unfiltered_rois, unmodified):
+    @staticmethod
+    def draw_results_to_image(rois, unfiltered_rois, unmodified):
         draw_regions(unfiltered_rois, unmodified, (0, 1, 0))
         draw_regions(rois, unmodified, (0, 0, 1))
         # show the image and delay the execution
@@ -122,16 +122,17 @@ class Detector:
     def filter_rois(self, rois):
         all_regions = rois[:]
         result = []
-        for roi in rois:
+        for roi_tuple in rois:
+            roi = roi_tuple[0]
             keep = True
-            for other in all_regions:
-                if roi is not other and roi.area <= other.area and roi.get_overlap(other) > self.max_overlap:
+            for other, activation_maps in all_regions:
+                if roi is not other and roi.area < other.area and roi.get_overlap(other) > self.max_overlap:
                     keep = False
                     break
             if keep:
-                result.append(roi)
+                result.append(roi_tuple)
             else:
-                all_regions.remove(roi)
+                all_regions.remove(roi_tuple)
         return result
 
     def identify_regions(self, image):
@@ -181,7 +182,7 @@ class Detector:
 
         # Show some information about the regions
         # print "Number Regions: " + str(len(rois))
-        return rois
+        return rois, activation[:]
 
     def display_activation_maps(self, layer_blob):
         plot = 1
@@ -209,7 +210,10 @@ class Detector:
             thresh = cv2.blur(thresh, (self.blur_radius, self.blur_radius))
 
         # extract the contours
-        converted = np.array(thresh / max_value * 255, dtype=np.uint8)
+        if max_value == 0:
+            max_value = 1
+        converted = (thresh / max_value * 255.0)
+        converted = converted.astype(np.uint8)
         im2, contours, hierarchy = cv2.findContours(converted, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # create bounding boxes
@@ -220,13 +224,25 @@ class Detector:
             area = w * h * factor_x * factor_y
             if self.area_threshold_min <= area <= self.area_threshold_max:
                 # append the found roi to the list of rois
-                rois.append(PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0))
+                rois.append(PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0, factor_x, factor_y))
         return rois, contours
 
     def _check_rois(self, image, rois):
-        for roi in rois:
+        """
+
+        :param image:
+        :param rois:
+        :return:
+        :type rois: (PossibleROI, int[])[]
+        """
+        if self.faster_rcnn:
+            self._check_rois_faster(rois)
+            return
+
+        for roi, activation_maps in rois:
             caffe_in = _prepare_image(image, self.net.blobs['data'].shape, roi, self.size_factor)
             self.net.blobs['data'].data[...] = caffe_in
+
             out = self.net.forward()
 
             # get the class
@@ -236,6 +252,31 @@ class Detector:
             roi.probability = possibility
             roi.sign = class_index
 
+    def _check_rois_faster(self, rois):
+        """
+        Check a roi without passing the corresponding image through the net again
+        :param image:
+        :param rois:
+        :return:
+        :type rois: (PossibleROI, int[])[]
+        """
+        for roi, activation_maps in rois:
+            maps = _prepare_activation_maps(maps=activation_maps,
+                                            x1=roi.x1 / roi.zoom_factor[0],
+                                            x2=roi.x2 / roi.zoom_factor[0],
+                                            y1=roi.y1 / roi.zoom_factor[1],
+                                            y2=roi.y2 / roi.zoom_factor[1])
+
+            # Resize global pooling layers input
+            self.net.blobs[self.global_pooling_layer].data[...] = maps
+            out = self.net.forward(start="ip1_1")
+
+            # get the class
+            class_index = out[self.out_layer].argmax()
+            possibility = out[self.out_layer][0][class_index]
+
+            roi.probability = possibility
+            roi.sign = class_index
 
 def _prepare_image(image, original_shape, roi, size_factor):
     crop_img = __crop_image(image, roi, size_factor)
@@ -244,8 +285,37 @@ def _prepare_image(image, original_shape, roi, size_factor):
     return caffe_in
 
 
+def _prepare_activation_maps(maps, x1, y1, x2, y2):
+    """
+
+    :param cropped_maps: The activation maps
+    :param x1:
+    :param y1:
+    :param x2:
+    :param y2:
+    :return:
+    :type x1: int
+    :type x2: int
+    :type y1: int
+    :type y2: int
+    :type cropped_maps: [[[[int]]]]
+    """
+    cropped_maps = maps[:, :, y1:y2, x1:x2]
+    ret = np.zeros((len(cropped_maps), len(cropped_maps[0]), 1, 1))
+    for i_batch, batch in enumerate(cropped_maps):
+        for i_filter, activation_map in enumerate(batch):
+            ret[i_batch, i_filter, 0, 0] = np.amax(activation_map)
+    return ret
+
+
 def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
     for roi in rois:
+
+        # In case that the roi is actually a tuple consisting of the roi and the activation maps...
+        try:
+            roi = roi[0]
+        except:
+            pass
         cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=color, thickness=2)
         if print_class:
             retval, base_line = cv2.getTextSize(str(roi.sign), cv2.FONT_HERSHEY_PLAIN, 1, 1)

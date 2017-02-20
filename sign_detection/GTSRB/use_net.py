@@ -10,8 +10,8 @@ def load_net(model, weights):
     # load input and configure preprocessing
     transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
     transformer.set_transpose('data', (2, 0, 1))
-    #transformer.set_channel_swap('data', (2, 1, 0))
-    #transformer.set_raw_scale('data', 0.3)
+    transformer.set_channel_swap('data', (2, 1, 0))
+    transformer.set_raw_scale('data', 255.0)
     return net, transformer
 
 def setup_device(gpu=True, device=0):
@@ -101,11 +101,12 @@ def parse_arguments():
     # Create the parser
     parser = argparse.ArgumentParser(description='Use a trained net to identify images')
     parser.add_argument('image', type=str, nargs='+', help='An image to identify')
-    parser.add_argument('-m', '--model', type=str, default='/home/pi/development/nets/quadruple_nin_deploy.prototxt',
+    parser.add_argument('-m', '--model', type=str, default='mini_net/deploy.prototxt',
                         help='The model to use (.prototxt)')
     parser.add_argument('-w', '--weights', type=str,
-                        default='/home/pi/development/nets/quadruple_nin_iter_45000.caffemodel',
+                        default='mini_net/weights.caffemodel',
                         help='The weights to use (trained net / .caffemodel)')
+    parser.add_argument('-o', '--outlayer', type=str, default='softmax', help='The name of the output layer')
 
     # Read the input arguments
     args = parser.parse_args()
@@ -120,7 +121,7 @@ def parse_arguments():
 
     start = timeit.default_timer()
 
-    category, probability = compute(net)
+    category, probability = compute(net, args.outlayer)
 
     stop = timeit.default_timer()
 
@@ -128,4 +129,5 @@ def parse_arguments():
     print "Category: " + str(category) + ": " + get_name_from_category(category) + ", " + str(probability)
 
 
-#parse_arguments()
+if __name__ == "__main__":
+    parse_arguments()

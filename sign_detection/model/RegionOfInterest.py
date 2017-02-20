@@ -108,6 +108,9 @@ class RegionOfInterest(object):
     def area(self):
         return (self.x1 - self.x2) * (self.y1 - self.y2)
 
+    def similar(self, other, min_overlap):
+        return self.get_overlap(other) <= min_overlap
+
     def project(self, factor):
         """
         Projects the region of interest onto a area by the given factor. Each coordinate will be scaled by it.
