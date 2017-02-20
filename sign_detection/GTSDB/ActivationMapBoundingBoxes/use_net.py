@@ -82,10 +82,7 @@ class Detector:
         :param overlapping_rois: The regions to go though
         :return: Returns an array of regions
         """
-        if len(overlapping_rois) < 20:
-            unfiltered_rois = self.filter_rois(overlapping_rois)
-        else:
-            unfiltered_rois = overlapping_rois
+        unfiltered_rois = self.filter_rois(overlapping_rois)
         return unfiltered_rois
 
     def collect_regions(self, im):
