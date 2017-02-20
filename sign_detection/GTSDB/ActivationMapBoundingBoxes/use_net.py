@@ -15,7 +15,7 @@ class Detector:
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
                  activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
-                 size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1"):
+                 size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1", faster_rcnn=False):
         """
 
         :param net: The net to use
@@ -49,6 +49,7 @@ class Detector:
         self.minimum = minimum
         self.net = net
         self.global_pooling_layer = global_pooling_layer
+        self.faster_rcnn = faster_rcnn
 
     def identify_regions_from_image(self, im, unmodified):
         """
@@ -228,10 +229,22 @@ class Detector:
         return rois, contours
 
     def _check_rois(self, image, rois):
+        """
+
+        :param image:
+        :param rois:
+        :return:
+        :type rois: (PossibleROI, int[])[]
+        """
+        if self.faster_rcnn:
+            self._check_rois_faster(rois)
+            return
+
+        for roi, activation_maps in rois:
             caffe_in = _prepare_image(image, self.net.blobs['data'].shape, roi, self.size_factor)
             self.net.blobs['data'].data[...] = caffe_in
+
             out = self.net.forward()
-        for roi, activation_maps in rois:
 
             # get the class
             class_index = out[self.out_layer].argmax()
@@ -240,6 +253,31 @@ class Detector:
             roi.probability = possibility
             roi.sign = class_index
 
+    def _check_rois_faster(self, rois):
+        """
+        Check a roi without passing the corresponding image through the net again
+        :param image:
+        :param rois:
+        :return:
+        :type rois: (PossibleROI, int[])[]
+        """
+        for roi, activation_maps in rois:
+            maps = _prepare_activation_maps(maps=activation_maps,
+                                            x1=roi.x1 / roi.zoom_factor[0],
+                                            x2=roi.x2 / roi.zoom_factor[0],
+                                            y1=roi.y1 / roi.zoom_factor[1],
+                                            y2=roi.y2 / roi.zoom_factor[1])
+
+            # Resize global pooling layers input
+            self.net.blobs[self.global_pooling_layer].data[...] = maps
+            out = self.net.forward(start="ip1_1")
+
+            # get the class
+            class_index = out[self.out_layer].argmax()
+            possibility = out[self.out_layer][0][class_index]
+
+            roi.probability = possibility
+            roi.sign = class_index
 
 def _prepare_image(image, original_shape, roi, size_factor):
     crop_img = __crop_image(image, roi, size_factor)
