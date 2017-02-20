@@ -224,7 +224,7 @@ class Detector:
             area = w * h * factor_x * factor_y
             if self.area_threshold_min <= area <= self.area_threshold_max:
                 # append the found roi to the list of rois
-                rois.append(PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0))
+                rois.append(PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0, factor_x, factor_y))
         return rois, contours
 
     def _check_rois(self, image, rois):
