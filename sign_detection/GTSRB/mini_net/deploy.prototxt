@@ -64,17 +64,17 @@ layer {
 }
 
 
-#layer {
-#  name: "activation"
-#  type: "Pooling"
-#  bottom: "conv3"
-#  top: "activation"
-#  pooling_param {
-#    pool: MAX
-#    kernel_size: 11
-#    stride: 8
-#  }
-#}
+layer {
+  name: "activation"
+  type: "Pooling"
+  bottom: "conv3"
+  top: "activation"
+  pooling_param {
+    pool: MAX
+    kernel_size: 11
+    stride: 8
+  }
+}
 layer {
   name: "pool1"
   type: "Pooling"
