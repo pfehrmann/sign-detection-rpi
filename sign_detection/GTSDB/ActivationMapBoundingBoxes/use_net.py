@@ -248,6 +248,29 @@ def _prepare_image(image, original_shape, roi, size_factor):
     return caffe_in
 
 
+def _prepare_activation_maps(maps, x1, y1, x2, y2):
+    """
+
+    :param cropped_maps: The activation maps
+    :param x1:
+    :param y1:
+    :param x2:
+    :param y2:
+    :return:
+    :type x1: int
+    :type x2: int
+    :type y1: int
+    :type y2: int
+    :type cropped_maps: [[[[int]]]]
+    """
+    cropped_maps = maps[:, :, y1:y2, x1:x2]
+    ret = np.zeros((len(cropped_maps), len(cropped_maps[0]), 1, 1))
+    for i_batch, batch in enumerate(cropped_maps):
+        for i_filter, activation_map in enumerate(batch):
+            ret[i_batch, i_filter, 0, 0] = np.amax(activation_map)
+    return ret
+
+
 def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
     for roi in rois:
 
