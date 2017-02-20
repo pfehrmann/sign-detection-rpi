@@ -210,7 +210,10 @@ class Detector:
             thresh = cv2.blur(thresh, (self.blur_radius, self.blur_radius))
 
         # extract the contours
-        converted = np.array(thresh / max_value * 255, dtype=np.uint8)
+        if max_value == 0:
+            max_value = 1
+        converted = (thresh / max_value * 255.0)
+        converted = converted.astype(np.uint8)
         im2, contours, hierarchy = cv2.findContours(converted, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # create bounding boxes
