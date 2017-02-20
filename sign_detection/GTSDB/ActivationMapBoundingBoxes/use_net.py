@@ -15,7 +15,7 @@ class Detector:
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
                  activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
-                 size_factor=0.4, max_overlap=0.2):
+                 size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1"):
         """
 
         :param net: The net to use
@@ -48,6 +48,7 @@ class Detector:
         self.use_global_max = use_global_max
         self.minimum = minimum
         self.net = net
+        self.global_pooling_layer = global_pooling_layer
 
     def identify_regions_from_image(self, im, unmodified):
         """
