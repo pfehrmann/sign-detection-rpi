@@ -11,7 +11,9 @@ import sign_detection.GTSDB.SlidingWindow.batchloader as BatchLoader
 
 
 def load(image):
-    return caffe.io.load_image(image.path)
+    im = caffe.io.load_image(image.path)
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    return im
 
 
 def test(gpu=True):
