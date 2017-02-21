@@ -97,6 +97,29 @@ class RegionOfInterest(object):
                   * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
         return overlap / area
 
+    def intersection_over_union(self, box_b):
+        # determine the (x, y)-coordinates of the intersection rectangle
+        xA = max(self.x1, box_b.x1)
+        yA = max(self.y1, box_b.y1)
+        xB = min(self.x2, box_b.x2)
+        yB = min(self.y2, box_b.y2)
+
+        # compute the area of intersection rectangle
+        interArea = (xB - xA + 1) * (yB - yA + 1)
+
+        # compute the area of both the prediction and ground-truth
+        # rectangles
+        boxAArea = (self.x2 - self.x1 + 1) * (self.y2 - self.y1 + 1)
+        boxBArea = (box_b.x2 - box_b.x1 + 1) * (box_b.y2 - box_b.y1 + 1)
+
+        # compute the intersection over union by taking the intersection
+        # area and dividing it by the sum of prediction + ground-truth
+        # areas - the interesection area
+        iou = interArea / float(boxAArea + boxBArea - interArea)
+
+        # return the intersection over union value
+        return iou
+
     def increase_size(self, factor):
         dx = self.width * factor / 2
         dy = self.height * factor / 2
