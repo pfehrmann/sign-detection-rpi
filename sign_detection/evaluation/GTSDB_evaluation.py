@@ -50,15 +50,15 @@ def test(gpu=True):
     scores = []
     for found, expected in correct_rois:
         true_labels.append(expected.sign)
-        scores.append(expected.probability)
+        scores.append(expected.sign)
 
     for false_negative in false_negatives:
         true_labels.append(false_negative.sign)
-        scores.append(0)
+        scores.append(-1)
 
     for false_positive in false_positives:
         true_labels.append(-1)
-        scores.append(0-false_positive.probability)
+        scores.append(false_positive.sign)
 
     score = average_precision_score(true_labels, scores)
     print "Score: " + str(score)
