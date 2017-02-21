@@ -31,10 +31,9 @@ def test(gpu=True):
                            out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
                            max_overlap=0.5, faster_rcnn=False)
 
-    images = BatchLoader.get_images_and_regions(gtsdb_root="C:\development\FullIJCNN2013\FullIJCNN2013", min=0,
-    #                                            max=899)
-                                                max=899, shuffle_result=False)
-    images = images[600:605]
+    images = BatchLoader.get_images_and_regions(gtsdb_root="E:/development/GTSDB/FullIJCNN2013", min=0,
+                                                max=900, shuffle_result=False)
+    images = images[600:900]
     correct_rois = []
     false_negatives = []
     false_positives = []
