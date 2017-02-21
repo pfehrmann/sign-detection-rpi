@@ -25,8 +25,9 @@ def test(gpu=True):
                       "../GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
 
     # setup the detector
-    detector = un.Detector(net, minimum=0.99, use_global_max=False, threshold_factor=0.50, draw_results=False,
-                           zoom=[1], area_threshold_min=1000, area_threshold_max=30000, activation_layer="activation",
+    detector = un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75, draw_results=False,
+                           zoom=[1, 2], area_threshold_min=1000, area_threshold_max=50000,
+                           activation_layer="activation",
                            out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
                            max_overlap=0.5, faster_rcnn=False)
 
