@@ -301,7 +301,9 @@ def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
     :type y2: int
     :type cropped_maps: [[[[int]]]]
     """
-    cropped_maps = maps[:, :, y1:y2, x1:x2]
+    region = RegionOfInterest(x1, y1, x2, y2, None)
+    region = __scale_roi(maps[0][0], region, size_factor)
+    cropped_maps = maps[:, :, int(region.y1):int(region.y2), int(region.x1):int(region.x2)]
     ret = np.zeros((len(cropped_maps), len(cropped_maps[0]), 1, 1))
     for i_batch, batch in enumerate(cropped_maps):
         for i_filter, activation_map in enumerate(batch):
