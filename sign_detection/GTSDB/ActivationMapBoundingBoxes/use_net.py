@@ -265,7 +265,8 @@ class Detector:
                                             x1=roi.x1 / roi.zoom_factor[0],
                                             x2=roi.x2 / roi.zoom_factor[0],
                                             y1=roi.y1 / roi.zoom_factor[1],
-                                            y2=roi.y2 / roi.zoom_factor[1])
+                                            y2=roi.y2 / roi.zoom_factor[1],
+                                            size_factor=self.size_factor)
 
             # Resize global pooling layers input
             self.net.blobs[self.global_pooling_layer].data[...] = maps
@@ -285,7 +286,7 @@ def _prepare_image(image, original_shape, roi, size_factor):
     return caffe_in
 
 
-def _prepare_activation_maps(maps, x1, y1, x2, y2):
+def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
     """
 
     :param cropped_maps: The activation maps
@@ -328,14 +329,19 @@ def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
 
 
 def __crop_image(image, roi, size_factor):
+    copy = __scale_roi(image, roi, size_factor)
+    crop_img = np.array(image[int(copy.y1):int(copy.y2), int(copy.x1):int(copy.x2)], dtype=np.float16)
+    return crop_img
+
+
+def __scale_roi(image, roi, size_factor):
     copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
     copy.increase_size(size_factor)
     copy.x1 = max(0, copy.x1)
     copy.y1 = max(0, copy.y1)
     copy.x2 = min(image.shape[1], copy.x2)
     copy.y2 = min(image.shape[0], copy.y2)
-    crop_img = np.array(image[int(copy.y1):int(copy.y2), int(copy.x1):int(copy.x2)], dtype=np.float16)
-    return crop_img
+    return copy
 
 
 def draw_contours(image, contours):
