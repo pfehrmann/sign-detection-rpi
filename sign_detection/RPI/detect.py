@@ -28,7 +28,7 @@ def trace_calls(frame, event, arg):
     return
 
 
-sys.settrace(trace_calls)
+# sys.settrace(trace_calls)
 
 
 def identify_regions(save=False, display=True, resultion=(640, 480)):
