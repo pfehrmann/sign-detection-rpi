@@ -400,7 +400,8 @@ def load_image(image_path, factor=255.0 * 0.3):
 def identify_regions_from_image_path(model, weights, image_path, gpu=True, minimum=0.99, factor=255.0 * 0.3,
                                      use_global_max=True, threshold_factor=0.5, draw_results=False, zoom=[1, 2, 3],
                                      area_threshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
-                                     out_layer="softmax", display_activation=False, blur_radius=1):
+                                     out_layer="softmax", display_activation=False, blur_radius=1, faster_rcnn=False,
+                                     size_factor=0.4):
     """
     Load and process a net and image
     :param blur_radius: If > 1 the activation map will be blurred by the radius
@@ -436,18 +437,19 @@ def identify_regions_from_image_path(model, weights, image_path, gpu=True, minim
                         area_threshold_min=area_threshold_min,
                         area_threshold_max=area_thrshold_max,
                         activation_layer=activation_layer, out_layer=out_layer,
-                        display_activation=display_activation, blur_radius=blur_radius)
+                        display_activation=display_activation, blur_radius=blur_radius, faster_rcnn=faster_rcnn, size_factor=size_factor)
     return detector.identify_regions_from_image(im=im, unmodified=unmodified)
 
 
 # parse_arguments()
 if __name__ == "__main__":
-    regions = identify_regions_from_image_path(
+    regions, unfiltered = identify_regions_from_image_path(
         "C:/Users/Philipp/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
         "C:/Users/Philipp/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel",
-        "E:/development/GTSDB/FullIJCNN2013/00000.ppm", minimum=0.999, factor=255 * 0.15, use_global_max=True,
-        threshold_factor=0.5, draw_results=True, zoom=[1, 3, 6], area_threshold_min=600, area_thrshold_max=50000,
-        activation_layer="activation", display_activation=False, gpu=True, blur_radius=1)
+        "E:/development/GTSDB/FullIJCNN2013/00710.ppm", minimum=0.9999, factor=255.0 * 0.5, use_global_max=False,
+        threshold_factor=0.80, draw_results=True, zoom=[0.5, 1, 2], area_threshold_min=1000, area_thrshold_max=50000,
+        activation_layer="activation", display_activation=False, gpu=True, blur_radius=1, faster_rcnn=True,
+        size_factor=1)
 
     for roi in regions:
         print get_name_from_category(roi.sign) + " (" + str(roi.probability) + ") @({},{}), ({},{})".format(roi.x1,
