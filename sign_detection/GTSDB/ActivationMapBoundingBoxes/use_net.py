@@ -12,6 +12,7 @@ class Detector:
     """
     Use this lass to detect signs using a method similar to Faster RCNNs
     """
+
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
                  activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
@@ -137,11 +138,9 @@ class Detector:
     def identify_regions(self, image):
         """
         Identify regions in an image.
-        :param net: The net
         :param image: The image array
         :return: A list of rois with probabilities
         :returns: list[PossibleROI]
-        :type net: caffe.Net
         """
 
         # return parameters
@@ -266,7 +265,8 @@ class Detector:
                                             x1=roi.x1 / roi.zoom_factor[0],
                                             x2=roi.x2 / roi.zoom_factor[0],
                                             y1=roi.y1 / roi.zoom_factor[1],
-                                            y2=roi.y2 / roi.zoom_factor[1])
+                                            y2=roi.y2 / roi.zoom_factor[1],
+                                            size_factor=self.size_factor)
 
             # Resize global pooling layers input
             self.net.blobs[self.global_pooling_layer].data[...] = maps
@@ -286,7 +286,7 @@ def _prepare_image(image, original_shape, roi, size_factor):
     return caffe_in
 
 
-def _prepare_activation_maps(maps, x1, y1, x2, y2):
+def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
     """
 
     :param cropped_maps: The activation maps
@@ -301,7 +301,9 @@ def _prepare_activation_maps(maps, x1, y1, x2, y2):
     :type y2: int
     :type cropped_maps: [[[[int]]]]
     """
-    cropped_maps = maps[:, :, y1:y2, x1:x2]
+    region = RegionOfInterest(x1, y1, x2, y2, None)
+    region = __scale_roi(maps[0][0], region, size_factor)
+    cropped_maps = maps[:, :, int(region.y1):int(region.y2), int(region.x1):int(region.x2)]
     ret = np.zeros((len(cropped_maps), len(cropped_maps[0]), 1, 1))
     for i_batch, batch in enumerate(cropped_maps):
         for i_filter, activation_map in enumerate(batch):
@@ -327,15 +329,21 @@ def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
             cv2.putText(image, str(roi.sign), (int(roi.x1 + 1), int(roi.y2 - 1)), cv2.FONT_HERSHEY_PLAIN, 1,
                         (0, 0, 0))
 
+
 def __crop_image(image, roi, size_factor):
+    copy = __scale_roi(image, roi, size_factor)
+    crop_img = np.array(image[int(copy.y1):int(copy.y2), int(copy.x1):int(copy.x2)], dtype=np.float16)
+    return crop_img
+
+
+def __scale_roi(image, roi, size_factor):
     copy = RegionOfInterest(roi.x1, roi.y1, roi.x2, roi.y2, roi.sign)
     copy.increase_size(size_factor)
     copy.x1 = max(0, copy.x1)
     copy.y1 = max(0, copy.y1)
     copy.x2 = min(image.shape[1], copy.x2)
     copy.y2 = min(image.shape[0], copy.y2)
-    crop_img = np.array(image[int(copy.y1):int(copy.y2), int(copy.x1):int(copy.x2)], dtype=np.float16)
-    return crop_img
+    return copy
 
 
 def draw_contours(image, contours):
@@ -423,12 +431,12 @@ def identify_regions_from_image_path(model, weights, image_path, gpu=True, minim
     net = load_net(model, weights)
     im, unmodified = load_image(image_path, factor)
     detector = Detector(net, minimum=minimum,
-                                            use_global_max=use_global_max,
-                                            threshold_factor=threshold_factor, draw_results=draw_results, zoom=zoom,
-                                            area_threshold_min=area_threshold_min,
-                                            area_threshold_max=area_thrshold_max,
-                                            activation_layer=activation_layer, out_layer=out_layer,
-                                            display_activation=display_activation, blur_radius=blur_radius)
+                        use_global_max=use_global_max,
+                        threshold_factor=threshold_factor, draw_results=draw_results, zoom=zoom,
+                        area_threshold_min=area_threshold_min,
+                        area_threshold_max=area_thrshold_max,
+                        activation_layer=activation_layer, out_layer=out_layer,
+                        display_activation=display_activation, blur_radius=blur_radius)
     return detector.identify_regions_from_image(im=im, unmodified=unmodified)
 
 
