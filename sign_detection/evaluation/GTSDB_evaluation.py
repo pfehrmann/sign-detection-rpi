@@ -38,7 +38,7 @@ def test(gpu=True):
     false_negatives = []
     false_positives = []
     for image in images:
-        image_raw = load(image)*255.0*0.5
+        image_raw = load(image) * 255.0 * 0.4
         rois, unfiltered = detector.identify_regions_from_image(image_raw, image_raw)
         correct, false_negative, false_positive = evaluate(rois, image.get_region_of_interests())
         correct_rois.extend(correct)
@@ -60,12 +60,33 @@ def test(gpu=True):
         true_labels.append(-1)
         scores.append(false_positive.sign)
 
-    score = average_precision_score(true_labels, scores)
-    print "Score: " + str(score)
+    true_labels = [int(val) for val in true_labels]
+    scores = [int(val) for val in scores]
+
+    true_labels = label_binarize(true_labels, classes=range(-1, 43))
+    scores = label_binarize(scores, classes=range(-1, 43))
+
+    average_precision = [0 for x in range(44)]
+    for i in range(44):
+        average_precision[i] = average_precision_score(true_labels[:, i], scores[:, i], average='macro')
+
+    average_precision_micro = average_precision_score(true_labels, scores, average="micro")
+
+    # Remove the nan values. This enables us to get a number from the mAP macro. But it seems like this numbeis not
+    # quite right...
+    cleaned_ap = [x for x in average_precision if not math.isnan(x)]
+
+    # see http://scikit-learn.org/stable/modules/model_evaluation.html#multiclass-and-multilabel-classification for
+    # specification od modes. It seems, that micro is the mode used in PASCAL VOC
+    print "AP (micro):  " + str(average_precision_micro)
+    print "mAP (macro): " + str(np.mean(average_precision))
+    print "cleaned mAP: " + str(np.mean(cleaned_ap))
+    print "True Positives:  " + str(len(correct_rois))
+    print "False Positives: " + str(len(false_positives))
+    print "False Negatives: " + str(len(false_negatives))
 
 
 def evaluate(found_rois, expected_rois):
-
     # Find the true positives
     correct_rois = []
     for expected_roi in expected_rois:
@@ -77,14 +98,14 @@ def evaluate(found_rois, expected_rois):
     false_negative = expected_rois[:]
     for expected_roi in expected_rois:
         for (found, expected) in correct_rois:
-            if expected == expected_roi:
+            if expected == expected_roi and expected in false_negative:
                 false_negative.remove(expected)
 
     # Find all the false positives
     false_positive = found_rois[:]
     for found_roi in found_rois:
         for (found, expected) in correct_rois:
-            if found == found_roi:
+            if found == found_roi and found in false_positive:
                 false_positive.remove(found)
 
     return correct_rois, false_negative, false_positive
