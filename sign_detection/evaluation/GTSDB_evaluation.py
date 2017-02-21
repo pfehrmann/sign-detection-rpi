@@ -1,11 +1,13 @@
+import math
+
+import caffe.io
 import cv2
-import sklearn
+import numpy as np
+from sklearn.metrics import average_precision_score
+from sklearn.preprocessing import label_binarize
 
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import sign_detection.GTSDB.SlidingWindow.batchloader as BatchLoader
-from time import time
-from sklearn.metrics import average_precision_score
-import caffe.io
 
 
 def load(image):
