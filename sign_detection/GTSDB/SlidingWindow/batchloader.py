@@ -267,6 +267,8 @@ def get_images_and_regions(gtsdb_root, min=0, max=599, shuffle_result=True):
             images.append(last_image)
     if shuffle_result:
         shuffle(images)
+    else:
+        images.sort(key=lambda x: x.path)
     return images
 
 
