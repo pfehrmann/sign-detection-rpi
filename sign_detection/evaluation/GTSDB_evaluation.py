@@ -97,6 +97,40 @@ def test(gpu=True):
     print "False Positives: " + str(len(false_positives))
     print "False Negatives: " + str(len(false_negatives))
 
+    store_results("C:\Users\Philipp\Dropbox\Uni\Studienarbeit\GTSDB_Results.csv", detector, average_precision_micro, np.mean(average_precision), np.mean(cleaned_ap),
+                  len(correct_rois), len(false_positives), len(false_negatives), len(images))
+
+
+def store_results(file, detector, ap_micro, m_ap, m_ap_cleaned, true_positives, false_positives, false_negatives, num_images):
+    result = str(ap_micro) + ";" \
+             + str(m_ap) + ";" \
+             + str(m_ap_cleaned) + ";" \
+             + str(true_positives) + ";" \
+             + str(false_positives) + ";" \
+             + str(false_negatives) + ";" \
+             + str(num_images) + ";" \
+             + str(detector.minimum) + ";" \
+             + str(detector.use_global_max) + ";" \
+             + str(detector.threshold_factor) + ";" \
+             + str(detector.draw_results) + ";" \
+             + str(detector.zoom) + ";" \
+             + str(detector.area_threshold_min) + ";" \
+             + str(detector.area_threshold_max) + ";" \
+             + str(detector.activation_layer) + ";" \
+             + str(detector.out_layer) + ";" \
+             + str(detector.display_activation) + ";" \
+             + str(detector.blur_radius) + ";" \
+             + str(detector.size_factor) + ";" \
+             + str(detector.max_overlap) + ";" \
+             + str(detector.faster_rcnn) + ";" \
+             + str(detector.modify_average_value) + ";" \
+             + str(detector.average_value) + ";"
+    result += "\n"
+    print "Saving results..."
+    print(result)
+    fd = open(file, 'a')
+    fd.write(result)
+    fd.close()
 
 def evaluate(found_rois, expected_rois):
     # Find the true positives
