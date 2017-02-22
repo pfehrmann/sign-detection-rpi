@@ -33,8 +33,8 @@ def identify_regions(save=False, gpu=True):
     print "cv2.CAP_PROP_SATURATION: " + str(cap.get(cv2.CAP_PROP_SATURATION))
 
     # Change the camera setting using the set() function
-    cap.set(cv2.CAP_PROP_EXPOSURE, -5.0)  # set exposure so we don't have to scale the image
-    # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, True)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -4.0)  # set exposure so we don't have to scale the image
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, False)
     cap.set(cv2.CAP_PROP_BRIGHTNESS, 94.0)
     cap.set(cv2.CAP_PROP_SATURATION, 56.0)
     cap.set(cv2.CAP_PROP_CONTRAST, 24.0)
