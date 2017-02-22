@@ -50,7 +50,7 @@ def test(gpu=True):
     false_negatives = []
     false_positives = []
     for image in images:
-        image_raw = load(image) * 255.0 * 0.4
+        image_raw = load(image) * 255.0
         rois, unfiltered = detector.identify_regions_from_image(image_raw, image_raw)
         correct, false_negative, false_positive = evaluate(rois, image.get_region_of_interests())
         correct_rois.extend(correct)
