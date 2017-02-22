@@ -240,7 +240,7 @@ class Detector:
             return
 
         for roi, activation_maps in rois:
-            caffe_in = _prepare_image(image, self.net.blobs['data'].shape, roi, self.size_factor)
+            caffe_in = _prepare_image_for_roi(image, self.net.blobs['data'].shape, roi, self.size_factor)
             self.net.blobs['data'].data[...] = caffe_in
 
             out = self.net.forward()
@@ -255,9 +255,8 @@ class Detector:
     def _check_rois_faster(self, rois):
         """
         Check a roi without passing the corresponding image through the net again
-        :param image:
         :param rois:
-        :return:
+        :return: Nothing
         :type rois: (PossibleROI, int[])[]
         """
         for roi, activation_maps in rois:
@@ -279,7 +278,7 @@ class Detector:
             roi.probability = possibility
             roi.sign = class_index
 
-def _prepare_image(image, original_shape, roi, size_factor):
+def _prepare_image_for_roi(image, original_shape, roi, size_factor):
     crop_img = __crop_image(image, roi, size_factor)
     crop_img = caffe.io.resize_image(crop_img, (original_shape[2], original_shape[3]))
     caffe_in = crop_img.transpose((2, 0, 1))
@@ -289,7 +288,6 @@ def _prepare_image(image, original_shape, roi, size_factor):
 def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
     """
 
-    :param cropped_maps: The activation maps
     :param x1:
     :param y1:
     :param x2:
@@ -299,7 +297,6 @@ def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
     :type x2: int
     :type y1: int
     :type y2: int
-    :type cropped_maps: [[[[int]]]]
     """
     region = RegionOfInterest(x1, y1, x2, y2, None)
     region = __scale_roi(maps[0][0], region, size_factor)
