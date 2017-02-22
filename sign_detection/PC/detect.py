@@ -15,12 +15,12 @@ def identify_regions(save=False, gpu=True):
     # Setup the net and transformer
     net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
                       "../GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
-
+    average_value = 30
     # setup the detector
     detector = un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75, draw_results=False,
                            zoom=[1], area_threshold_min=1200, area_threshold_max=50000, activation_layer="activation",
                            out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
-                           faster_rcnn=False)
+                           faster_rcnn=True, modify_average_value=True, average_value=average_value)
 
     # capture from camera at location 0
     cap = cv2.VideoCapture(0)
@@ -48,13 +48,14 @@ def identify_regions(save=False, gpu=True):
 
         # capture the image
         ret, img = cap.read()
-
+        unmodified_image = img[:]
         # pass the image through the net
         rois, unfiltered = detector.identify_regions_from_image(img, img)
 
         end = time()
 
         # Show the regions
+        img = un.set_average_value(unmodified_image, average_value)
         un.draw_regions(unfiltered, img, (0, 255, 0))
         un.draw_regions(rois, img, (0, 0, 255), print_class=True)
         cv2.putText(img, "{} fps".format(1.0 / (end - start)), (5, img.shape[0] - 10), cv2.FONT_HERSHEY_PLAIN, 1,

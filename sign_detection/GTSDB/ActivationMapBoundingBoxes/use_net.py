@@ -16,7 +16,8 @@ class Detector:
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
                  activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
-                 size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1", faster_rcnn=False):
+                 size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1", faster_rcnn=False, average_value=30,
+                 modify_average_value=False):
         """
 
         :param net: The net to use
@@ -51,6 +52,8 @@ class Detector:
         self.net = net
         self.global_pooling_layer = global_pooling_layer
         self.faster_rcnn = faster_rcnn
+        self.average_value = average_value
+        self.modify_average_value = modify_average_value
 
     def identify_regions_from_image(self, im, unmodified):
         """
@@ -60,6 +63,11 @@ class Detector:
         :return: Returns all the found ROIs as a list of PossibleROI elements.
         :returns: list[PossibleROI]
         """
+
+        if self.modify_average_value:
+            im = set_average_value(im, self.average_value)
+        else:
+            im = im
 
         # collect all the regions of interest
         overlapping_rois = self.collect_regions(im)
@@ -277,6 +285,16 @@ class Detector:
 
             roi.probability = possibility
             roi.sign = class_index
+
+
+def preprocess_image(image):
+    return set_average_value(image, 0.4)
+
+
+def set_average_value(image, val):
+    average = np.average(cv2.mean(image)[:3])
+    return (image * (val / average)).clip(0, 255).astype(np.uint8)
+
 
 def _prepare_image_for_roi(image, original_shape, roi, size_factor):
     crop_img = __crop_image(image, roi, size_factor)
