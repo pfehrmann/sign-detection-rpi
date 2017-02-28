@@ -92,10 +92,7 @@ class RegionOfInterest(object):
 
         :type other: RegionOfInterest
         """
-        area = float(max(self.area(), other.area()))
-        overlap = max(0, min(self.x2, other.x2) - max(self.x1, other.x1)) \
-                  * max(0, min(self.y2, other.y2) - max(self.y1, other.y1))
-        return overlap / area
+        return self.intersection_over_union(other)
 
     def intersection_over_union(self, box_b):
         # determine the (x, y)-coordinates of the intersection rectangle
