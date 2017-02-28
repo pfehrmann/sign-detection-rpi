@@ -1,0 +1,48 @@
+input: "ip1_1"
+
+
+
+layer {
+  name: "ip1_1"
+  type: "InnerProduct"
+  top: "ip1"
+  inner_product_param {
+    num_output: 50
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "ip2_1"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "ip2"
+  inner_product_param {
+    num_output: 20
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "ip3_1"
+  type: "InnerProduct"
+  bottom: "ip2"
+  top: "ip3"
+  inner_product_param {
+    num_output: 4
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "ip3"
+  top: "softmax"
+}
