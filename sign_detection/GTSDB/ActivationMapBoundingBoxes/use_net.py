@@ -192,7 +192,8 @@ class Detector:
         # print "Number Regions: " + str(len(rois))
         return rois, activation[:]
 
-    def display_activation_maps(self, layer_blob):
+    @staticmethod
+    def display_activation_maps(layer_blob):
         plot = 1
         count_plots = layer_blob.shape[1]
         width = int(count_plots ** 0.5)
