@@ -320,14 +320,19 @@ def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
     :type y1: int
     :type y2: int
     """
-    region = RegionOfInterest(x1, y1, x2, y2, None)
-    region = __scale_roi(maps[0][0], region, size_factor)
-    cropped_maps = maps[:, :, int(region.y1):int(region.y2), int(region.x1):int(region.x2)]
+    cropped_maps = _crop_activation_maps(maps, size_factor, x1, x2, y1, y2)
     ret = np.zeros((len(cropped_maps), len(cropped_maps[0]), 1, 1))
     for i_batch, batch in enumerate(cropped_maps):
         for i_filter, activation_map in enumerate(batch):
-            ret[i_batch, i_filter, 0, 0] = np.amax(activation_map)
+            ret[i_batch, i_filter, 0, 0] = activation_map.max()
     return ret
+
+
+def _crop_activation_maps(maps, size_factor, x1, x2, y1, y2):
+    region = RegionOfInterest(x1, y1, x2, y2, None)
+    region = __scale_roi(maps[0][0], region, size_factor)
+    cropped_maps = maps[:, :, int(region.y1):int(region.y2), int(region.x1):int(region.x2)]
+    return cropped_maps
 
 
 def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
