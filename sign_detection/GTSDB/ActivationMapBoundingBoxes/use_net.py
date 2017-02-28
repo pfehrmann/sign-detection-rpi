@@ -293,7 +293,10 @@ def preprocess_image(image):
 
 def set_average_value(image, val):
     average = np.average(cv2.mean(image)[:3])
-    return (image * (val / average)).clip(0, 255).astype(np.uint8)
+    lut = np.array(range(0, 256)) * (val / average)
+    lut = lut.clip(0, 255).astype(np.uint8)
+    res = cv2.LUT(src=image, lut=lut)
+    return res
 
 
 def _prepare_image_for_roi(image, original_shape, roi, size_factor):
