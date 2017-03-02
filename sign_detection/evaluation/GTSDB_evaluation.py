@@ -21,12 +21,13 @@ def test(gpu=True):
     un.setup_device(gpu=gpu)
 
     # Setup the net and transformer
-    net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
-                      "../GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
+    path = "mini_net_aug_scale"
+    net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/" + path + "/deploy.prototxt",
+                      "../GTSDB/ActivationMapBoundingBoxes/" + path + "/weights.caffemodel")
 
     # setup the detector
     detector = un.Detector(net,
-                           minimum=0.999,
+                           minimum=0.9,
                            use_global_max=False,
                            threshold_factor=0.75,
                            draw_results=False,
@@ -37,20 +38,20 @@ def test(gpu=True):
                            out_layer="softmax",
                            display_activation=False,
                            blur_radius=1,
-                           size_factor=0.5,
+                           size_factor=0.1,
                            max_overlap=0.5,
                            faster_rcnn=True,
                            modify_average_value=True,
-                           average_value=25)
+                           average_value=95)
 
-    images = BatchLoader.get_images_and_regions(gtsdb_root="E:/development/GTSDB/FullIJCNN2013", min=0,
+    images = BatchLoader.get_images_and_regions(gtsdb_root="C:/development/FullIJCNN2013/FullIJCNN2013", min=0,
                                                 max=900, shuffle_result=False)
-    images = images[600:900]
+    images = images[600:620]
     correct_rois = []
     false_negatives = []
     false_positives = []
     for image in images:
-        image_raw = load(image) * 255.0
+        image_raw = load(image) * 255
         rois, unfiltered = detector.identify_regions_from_image(image_raw, image_raw)
         correct, false_negative, false_positive = evaluate(rois, image.get_region_of_interests())
         correct_rois.extend(correct)
@@ -97,11 +98,13 @@ def test(gpu=True):
     print "False Positives: " + str(len(false_positives))
     print "False Negatives: " + str(len(false_negatives))
 
-    store_results("C:\Users\Philipp\Dropbox\Uni\Studienarbeit\GTSDB_Results.csv", detector, average_precision_micro, np.mean(average_precision), np.mean(cleaned_ap),
-                  len(correct_rois), len(false_positives), len(false_negatives), len(images))
+    store_results("C:\Users\phili\Dropbox\Uni\Studienarbeit\GTSDB_Results.csv", detector, average_precision_micro,
+                  np.mean(average_precision), np.mean(cleaned_ap),
+                  len(correct_rois), len(false_positives), len(false_negatives), len(images), path)
 
 
-def store_results(file, detector, ap_micro, m_ap, m_ap_cleaned, true_positives, false_positives, false_negatives, num_images):
+def store_results(file, detector, ap_micro, m_ap, m_ap_cleaned, true_positives, false_positives, false_negatives,
+                  num_images, path):
     result = str(ap_micro) + ";" \
              + str(m_ap) + ";" \
              + str(m_ap_cleaned) + ";" \
@@ -124,7 +127,8 @@ def store_results(file, detector, ap_micro, m_ap, m_ap_cleaned, true_positives, 
              + str(detector.max_overlap) + ";" \
              + str(detector.faster_rcnn) + ";" \
              + str(detector.modify_average_value) + ";" \
-             + str(detector.average_value) + ";"
+             + str(detector.average_value) + ";" \
+             + str(path)
     result += "\n"
     print "Saving results..."
     print(result)
