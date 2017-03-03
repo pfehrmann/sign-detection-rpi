@@ -14,7 +14,7 @@ stepvalue: 35000
 momentum: 0.9
 weight_decay: 0.0001
 snapshot: 2000
-snapshot_prefix: "data/snapshot"
+snapshot_prefix: "data/snapshot/"
 solver_mode: GPU
 type: "SGD"
 snapshot_after_train: 1
