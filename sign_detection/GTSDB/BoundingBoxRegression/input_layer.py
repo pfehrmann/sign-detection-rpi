@@ -2,6 +2,7 @@ import caffe
 
 import sign_detection.tools.batchloader as bl
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
+from sign_detection.model.IdentifiedImage import IdentifiedImage
 
 
 class InputLayer(caffe.Layer):
@@ -20,7 +21,9 @@ class InputLayer(caffe.Layer):
         self.file_input_weights = ''  # type: str
         self.location_gt = ''  # type: str
         self.shape = [1, 64, 20, 20]  # type: list
-        self.images = []  # type: listiterator
+        self.images = []  # type: list
+        self.image_iterator = iter([])  # type: listiterator
+        self.rois = iter([])  # type: listiterator
         self.input_detector = None  # type: un.Detector
         self.net = None  # type: caffe.Net
 
@@ -37,10 +40,6 @@ class InputLayer(caffe.Layer):
 
         self.load_images()
 
-        # Create the blob
-        # self.blobs.add_blob(1)
-        # self.blobs[0].data[0] = 0
-
     def forward(self, bottom, top):
         """
         1. Get new data to use
@@ -48,28 +47,50 @@ class InputLayer(caffe.Layer):
         3. Push label data into loss (the ground truth roi)
         """
         # 1. Get new data to use
-        data = self.get_next_data()
+        roi, activation = self.get_next_data()
 
-        self.shape = data.shape
+        # 2.
+        self.shape = activation.shape
         self.reshape(None, top)
+        top[0].data[...] = activation
 
-        top[0].data[...] = data
+        # 3.
+        top[1].data[...] = roi.get_vector()
 
     def reshape(self, bottom, top):
         if self.shape is not None:
             top[0].reshape(*self.shape)
 
+        top[1].reshape(1, 4)
+
     def backward(self, top, propagate_down, bottom):
         """Input layer does not back propagate"""
 
     def get_next_data(self):
-        # Get information for the next image
-        img_info = self.images.next()
+        try:
+            roi = self.rois.next()
+            image = roi[0]
+            region = roi[1]
+            activation = self.calculate_activation(image)
+            return region, activation
+        except StopIteration:
+            try:
+                img = self.image_iterator.next()
+                img_raw = caffe.io.load_image(img.path)
+                rois = [roi.clone()
+                        .disturb()
+                        .add_padding(11)
+                        .ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
+                        for roi in img.get_region_of_interests()]
+                cropped_rois = [(img_raw[roi.y1:roi.y2, roi.x1:roi.x2, :], roi) for roi in rois]
+                self.rois = iter(cropped_rois)
+                return self.get_next_data()
+            except StopIteration:
+                self.image_iterator = iter(self.images)
+                return self.get_next_data()
 
-
-        img_raw = caffe.io.load_image(img_info.path)
-        roi, activation = self.input_detector.identify_regions(img_raw)
-        return activation
+    def calculate_activation(self, img):
+        return self.input_detector.get_activation(img)
 
     def parse_arguments(self, arg_string):
         if not isinstance(arg_string, str) or not arg_string:
@@ -84,17 +105,13 @@ class InputLayer(caffe.Layer):
         self.input_detector = un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75,
                                           draw_results=False,
                                           zoom=[1], area_threshold_min=1200, area_threshold_max=50000,
-                                          activation_layer="activation",
+                                          activation_layer="conv3",
                                           out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
                                           faster_rcnn=True, modify_average_value=True, average_value=30)
 
-        # Load the net
-        # net = un.load_net("../ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
-        #                  "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
-
     def load_images(self):
-        images = bl.get_images_and_regions(self.location_gt, max=10)
-        self.images = iter(images)
+        self.images = bl.get_images_and_regions(self.location_gt)
+        # Create 'plain' objects: each image should only contain one roi
 
 
 def parse_arg(params, arg, arg_type):
