@@ -2,7 +2,7 @@ input: "input"
 layer {
   name: "l_input"
   type: "Python"
-  top: "activation"
+  top: "input_data"
   top: "label"
   python_param {
     module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer'
@@ -13,11 +13,11 @@ layer {
 layer {
     name: "l_spp"
     type: "SPP"
-    bottom: "activation"
+    bottom: "input_data"
     top: "spp"
     spp_param {
         pool: MAX
-        pyramid_height: 3
+        pyramid_height: 2
     }
 }
 layer {
