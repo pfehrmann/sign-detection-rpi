@@ -1,10 +1,29 @@
-input: "ip1_1"
-
-
-
+input: "input"
 layer {
-  name: "ip1_1"
+  name: "l_input"
+  type: "Python"
+  top: "activation"
+  top: "label"
+  python_param {
+    module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer'
+    layer: 'InputLayer'
+    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB"}'
+  }
+}
+layer {
+    name: "l_spp"
+    type: "SPP"
+    top: "spp"
+    bottom: "activation"
+    spp_param {
+        pool: MAX
+        pyramid_height: 3
+    }
+}
+layer {
+  name: "l_ip1"
   type: "InnerProduct"
+  bottom: "spp"
   top: "ip1"
   inner_product_param {
     num_output: 50
@@ -15,7 +34,7 @@ layer {
   }
 }
 layer {
-  name: "ip2_1"
+  name: "l_ip2"
   type: "InnerProduct"
   bottom: "ip1"
   top: "ip2"
@@ -28,7 +47,7 @@ layer {
   }
 }
 layer {
-  name: "ip3_1"
+  name: "l_ip3"
   type: "InnerProduct"
   bottom: "ip2"
   top: "ip3"
@@ -41,8 +60,8 @@ layer {
   }
 }
 layer {
-  name: "softmax"
-  type: "Softmax"
-  bottom: "ip3"
-  top: "softmax"
+    name: "l_loss"
+    type: "SigmoidCrossEntropyLoss"
+    bottom: "ip3"
+    bottom: "label"
 }

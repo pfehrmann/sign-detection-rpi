@@ -1,58 +1,106 @@
 import caffe
 
-from sign_detection.GTSDB.SlidingWindow.batchloader import BatchLoader
+import sign_detection.tools.batchloader as bl
+import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 
 
 class InputLayer(caffe.Layer):
     """
-    This is a layer for training the detection net. The net returns 1 if exactly one traffic sign is in a
-    region of interest.
+    Input layer for bb net. Has dynamic input size and fixed output size. Input is a proposed region of a
+    activation layer. output should be
+
+    On each forward, the layer should reshape the top layer.
     """
 
+    def __init__(self, p_object, *args, **kwargs):
+        super(InputLayer, self).__init__(p_object, *args, **kwargs)
+
+        # Init class variables
+        self.file_input_net = ''  # type: str
+        self.file_input_weights = ''  # type: str
+        self.location_gt = ''  # type: str
+        self.shape = [1, 64, 20, 20]  # type: list
+        self.images = []  # type: listiterator
+        self.input_detector = None  # type: un.Detector
+        self.net = None  # type: caffe.Net
+
     def setup(self, bottom, top):
-        self.top_names = ['data', 'label']
+        self.top_names = ['activation', 'label']  # Do we need that?
 
-        # params is a python dictionary with layer parameters.
-        params = eval(self.param_str)
-        check_params(params)
+        # Setup validation
+        if len(bottom) > 0:
+            raise Exception('Input layer cannot have other layers as input.')
 
-        # since we use a fixed input image size, we can shape the data layer
-        # once. Else, we'd have to do it in the reshape call.
-        top[0].reshape(self.batch_size, 3, params['window_size'], params['window_size'])
+        self.parse_arguments(self.param_str)
 
-        # Use one values to determine the class, if a region contains a sign class = 1, else 0
-        top[1].reshape(self.batch_size, 1)
+        self.load_input_detector()
+
+        self.load_images()
+
+        # Create the blob
+        # self.blobs.add_blob(1)
+        # self.blobs[0].data[0] = 0
 
     def forward(self, bottom, top):
         """
-        Load data.
+        1. Get new data to use
+        2. Push activation data into net
+        3. Push label data into loss (the ground truth roi)
         """
-        for itt in range(self.batch_size):
-            # Use the batch loader to load the next image.
-            im, label = self.batch_loader.next_window()
+        # 1. Get new data to use
+        data = self.get_next_data()
 
-            top[0].data[itt, ...] = im
-            top[1].data[itt, ...] = label
+        self.shape = data.shape
+        self.reshape(None, top)
+
+        top[0].data[...] = data
 
     def reshape(self, bottom, top):
-        """
-        There is no need to reshape the data, since the input is of fixed size
-        (rows and columns)
-        """
-        pass
+        if self.shape is not None:
+            top[0].reshape(*self.shape)
 
     def backward(self, top, propagate_down, bottom):
-        """
-        These layers does not back propagate
-        """
-        pass
+        """Input layer does not back propagate"""
+
+    def get_next_data(self):
+        # Get information for the next image
+        img_info = self.images.next()
 
 
-def check_params(params):
-    """
-    A utility function to check the parameters for the data layers.
-    """
+        img_raw = caffe.io.load_image(img_info.path)
+        roi, activation = self.input_detector.identify_regions(img_raw)
+        return activation
 
-    required = ['batch_size', 'gtsdb_root', 'window_size']
-    for r in required:
-        assert r in params.keys(), 'Params must include {}'.format(r)
+    def parse_arguments(self, arg_string):
+        if not isinstance(arg_string, str) or not arg_string:
+            raise Exception('Input layer: No params given. please specify param_str in your net definition (prototxt)')
+        params = eval(arg_string)
+        self.file_input_net = parse_arg(params, 'file_input_net', str)
+        self.file_input_weights = parse_arg(params, 'file_input_weights', str)
+        self.location_gt = parse_arg(params, 'location_gt', str)
+
+    def load_input_detector(self):
+        net = un.load_net(self.file_input_net, self.file_input_weights)
+        self.input_detector = un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75,
+                                          draw_results=False,
+                                          zoom=[1], area_threshold_min=1200, area_threshold_max=50000,
+                                          activation_layer="activation",
+                                          out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
+                                          faster_rcnn=True, modify_average_value=True, average_value=30)
+
+        # Load the net
+        # net = un.load_net("../ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
+        #                  "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
+
+    def load_images(self):
+        images = bl.get_images_and_regions(self.location_gt, max=10)
+        self.images = iter(images)
+
+
+def parse_arg(params, arg, arg_type):
+    if arg not in params:
+        raise Exception('Input layer: Missing setup param "{0}"' % arg)
+    val = params[arg]
+    if not isinstance(val, arg_type):
+        raise Exception('Input layer: Setup param "{0}" has invalid type' % arg)
+    return val

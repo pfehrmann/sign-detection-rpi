@@ -1,4 +1,4 @@
-net: "deploy.prototxt"
+net: "net_separate/deploy.prototxt"
 test_iter: 410
 test_interval: 1000
 base_lr: 0.01
