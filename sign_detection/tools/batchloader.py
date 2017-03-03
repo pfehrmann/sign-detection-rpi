@@ -234,8 +234,8 @@ def get_images_and_regions(gtsdb_root, min=0, max=599, shuffle_result=True):
     """
     # get list of image indexes.
     duplicated_images = []  # images
-    with open(gtsdb_root + "/gt.txt") as gtFile:
-        gt_reader = csv.reader(gtFile, delimiter=';')  # csv parser for annotations file
+    with open(gtsdb_root + "/gt.txt") as gt_file:
+        gt_reader = csv.reader(gt_file, delimiter=';')  # csv parser for annotations file
         # loop over all images in current annotations file
         for row in gt_reader:
             path_to_image = gtsdb_root + "/" + row[0]
