@@ -1,3 +1,6 @@
+from random import random
+
+
 class RegionOfInterest(object):
     def __init__(self, x1, y1, x2, y2, sign):
         """
@@ -84,6 +87,13 @@ class RegionOfInterest(object):
     def height(self):
         return self.y2 - self.y1
 
+    def move(self, v):
+        self.x1 += v[0]
+        self.x2 += v[0]
+        self.y1 += v[1]
+        self.y2 += v[1]
+        return self
+
     def get_overlap(self, other):
         """
         Calculates the overlap of two regions
@@ -138,3 +148,30 @@ class RegionOfInterest(object):
         :return: A new projected RegionOfInterest.
         """
         return RegionOfInterest(self.x1 * factor, self.y1 * factor, self.x2 * factor, self.y2 * factor, self.sign)
+
+    def clone(self):
+        return RegionOfInterest(self.x1, self.y1, self.x2, self.y2, self.sign)
+
+    def add_padding(self, size):
+        self.x1 -= size
+        self.y1 -= size
+        self.x2 += size
+        self.y2 += size
+        return self
+
+    def disturb(self, move_by=0.5):
+        size = self.size[:]
+        size[0] = int(size[0] * (random() * 2 - 1) * move_by)
+        size[1] = int(size[1] * (random() * 2 - 1) * move_by)
+        self.move(size)
+        return self
+
+    def ensure_bounds(self, max_x, max_y, min_x=0, min_y=0):
+        self.x1 = max(self.x1, min_x)
+        self.y1 = max(self.y1, min_y)
+        self.x2 = min(self.x2, max_x)
+        self.y2 = min(self.y2, max_y)
+        return self
+
+    def get_vector(self):
+        return [self.x1, self.x2, self.y1, self.x2]
