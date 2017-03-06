@@ -1,11 +1,8 @@
 import sign_detection.EV3.EV3 as ev3
 import time
 
-myEV3 = ev3.EV3(protocol=ev3.USB, host='00:16:53:47:92:46')
 
-
-def move(speed, turn):
-    global myEV3
+def move(speed, turn, my_e_v3):
     if turn > 0:
         speed_right = speed
         speed_left = round(speed * (1 - turn / 100.0))
@@ -25,22 +22,20 @@ def move(speed, turn):
         ev3.LCX(0),  # LAYER
         ev3.LCX(ev3.PORT_B + ev3.PORT_C)  # NOS
     ])
-    myEV3.send_direct_cmd(ops)
+    my_e_v3.send_direct_cmd(ops)
 
 
-def stop():
-    global myEV3
+def stop(my_e_v3):
     ops = b''.join([
         ev3.opOutput_Stop,
         ev3.LCX(0),  # LAYER
         ev3.LCX(ev3.PORT_B + ev3.PORT_C),  # NOS
         ev3.LCX(0)  # BRAKE
     ])
-    myEV3.send_direct_cmd(ops)
+    my_e_v3.send_direct_cmd(ops)
 
 
 if __name__ == "__main__":
-    move(100, 0)
-    time.sleep(1)
+    move(10, 0)
+    time.sleep(20)
     move(0, 0)
-
