@@ -55,6 +55,12 @@ def test():
 
 
 class ConsoleHandler(RoiResultHandler):
+    """
+    :type fps: list[float]
+    """
+    def __init__(self):
+        self.fps = []
+
     def handle_result(self, index, image_timestamp, result_timestamp, rois):
         """
         Prints all rois t the console
@@ -65,8 +71,16 @@ class ConsoleHandler(RoiResultHandler):
         :type result_timestamp: float
         :type rois: list[sign_detection.model.PossibleROI.PossibleROI]
         """
-        print "===Results==="
-        print 1.0 / (result_timestamp - image_timestamp)
+        global num_workers
+        current_fps = 1.0 / (result_timestamp - image_timestamp)
+        self.fps.insert(0, current_fps)
+        self.fps = self.fps[:num_workers]
+
+        sum_fps = 0
+        for fps in self.fps:
+            sum_fps += fps
+        print "FPS: " + str(sum_fps)
+
         for roi in rois:
             print roi.sign
 
