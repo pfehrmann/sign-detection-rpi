@@ -143,6 +143,27 @@ class Detector:
                 all_regions.remove(roi_tuple)
         return result
 
+    def get_activation(self, image):
+        # Transpose to fit caffes needs
+        caffe_in = image.transpose((2, 0, 1))
+
+        # store the original shape of the input layer
+        original_shape = self.net.blobs['data'].shape
+
+        # reshape the input layer to match the images size
+        width = caffe_in .shape[1]
+        height = caffe_in .shape[2]
+        self.net.blobs['data'].reshape(1, 3, width, height)
+
+        # set the data and forward
+        self.net.blobs['data'].data[...] = caffe_in
+        out = self.net.forward(blobs=[self.out_layer, self.activation_layer], end=self.activation_layer)
+
+        # reset the shape
+        self.net.blobs['data'].reshape(*original_shape)
+
+        return out[self.activation_layer][:]
+
     def identify_regions(self, image):
         """
         Identify regions in an image.
