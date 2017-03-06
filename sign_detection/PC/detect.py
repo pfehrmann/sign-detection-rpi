@@ -15,12 +15,24 @@ def identify_regions(save=False, gpu=True):
     # Setup the net and transformer
     net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
                       "../GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel")
-    average_value = 30
+    average_value = 100
     # setup the detector
-    detector = un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75, draw_results=False,
-                           zoom=[1], area_threshold_min=1200, area_threshold_max=50000, activation_layer="activation",
-                           out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
-                           faster_rcnn=True, modify_average_value=True, average_value=average_value)
+    detector = un.Detector(net,
+                           minimum=0.999,
+                           use_global_max=False,
+                           threshold_factor=0.75,
+                           draw_results=False,
+                           zoom=[1],
+                           area_threshold_min=1000,
+                           area_threshold_max=50000,
+                           activation_layer="activation",
+                           out_layer="softmax",
+                           display_activation=False,
+                           blur_radius=1,
+                           size_factor=0.5,
+                           faster_rcnn=True,
+                           modify_average_value=True,
+                           average_value=average_value)
 
     # capture from camera at location 0
     cap = cv2.VideoCapture(0)
@@ -33,10 +45,10 @@ def identify_regions(save=False, gpu=True):
     print "cv2.CAP_PROP_SATURATION: " + str(cap.get(cv2.CAP_PROP_SATURATION))
 
     # Change the camera setting using the set() function
-    cap.set(cv2.CAP_PROP_EXPOSURE, -4.0)  # set exposure so we don't have to scale the image
-    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, False)
-    cap.set(cv2.CAP_PROP_BRIGHTNESS, 94.0)
-    cap.set(cv2.CAP_PROP_SATURATION, 56.0)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -7.0)  # set exposure so we don't have to scale the image
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, True)
+    cap.set(cv2.CAP_PROP_BRIGHTNESS, -30.0)
+    cap.set(cv2.CAP_PROP_SATURATION, 50.0)
     cap.set(cv2.CAP_PROP_CONTRAST, 24.0)
     cap.set(cv2.CAP_PROP_CONVERT_RGB, True)  # set convert to rgb
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -79,4 +91,4 @@ def identify_regions(save=False, gpu=True):
 
 
 if __name__ == '__main__':
-    identify_regions(save=False, gpu=True)
+    identify_regions(save=True, gpu=True)
