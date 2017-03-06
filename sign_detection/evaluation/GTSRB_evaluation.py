@@ -5,4 +5,4 @@
 import sign_detection.GTSRB.ImageReader
 
 
-def test(, gtsrb_test_path):
+# def test(, gtsrb_test_path):

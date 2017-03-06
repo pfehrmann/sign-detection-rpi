@@ -1,58 +1,62 @@
 import caffe
 
-from sign_detection.GTSDB.SlidingWindow.batchloader import BatchLoader
+from sign_detection.GTSDB.BoundingBoxRegression.activation_map_source import ActivationMapSource
+from sign_detection.model.IdentifiedImage import IdentifiedImage
 
 
 class InputLayer(caffe.Layer):
     """
-    This is a layer for training the detection net. The net returns 1 if exactly one traffic sign is in a
-    region of interest.
+    Input layer for bb net. Has dynamic input size and fixed output size. Input is a proposed region of a
+    activation layer. output should be
+
+    On each forward, the layer should reshape the top layer.
     """
+
+    def __init__(self, p_object, *args, **kwargs):
+        super(InputLayer, self).__init__(p_object, *args, **kwargs)
+
+        # Init class variables
+        # TODO is this a good default shape? It will be used at least once.
+        self.shape = [1, 64, 2, 2]  # type: list
+        self.data_source = None
+        self.net = None  # type: caffe.Net
 
     def setup(self, bottom, top):
-        self.top_names = ['data', 'label']
+        self.top_names = ['data', 'label']  # TODO Do we need that?
 
-        # params is a python dictionary with layer parameters.
-        params = eval(self.param_str)
-        check_params(params)
+        # Warn, if this layer got an input. It will be ignored.
+        if len(bottom) > 0:
+            print "Warning: Input layer will ignore bottom layers."
 
-        # since we use a fixed input image size, we can shape the data layer
-        # once. Else, we'd have to do it in the reshape call.
-        top[0].reshape(self.batch_size, 3, params['window_size'], params['window_size'])
+        # Parse input arguments. These come from the net prototxt model
+        args = parse_arguments(self.param_str)
 
-        # Use one values to determine the class, if a region contains a sign class = 1, else 0
-        top[1].reshape(self.batch_size, 1)
+        # Create source class
+        self.data_source = ActivationMapSource(args)
 
     def forward(self, bottom, top):
-        """
-        Load data.
-        """
-        for itt in range(self.batch_size):
-            # Use the batch loader to load the next image.
-            im, label = self.batch_loader.next_window()
+        # 1. Get new data to use
+        data = self.data_source.get_next_data()
 
-            top[0].data[itt, ...] = im
-            top[1].data[itt, ...] = label
+        # 2. Reshape the net and then push data into it
+        self.shape = data.net_data.shape
+        self.reshape(None, top)
+        top[0].data[...] = data.net_data
+
+        # 3. Push label data into loss
+        top[1].data[...] = data.loss_data
 
     def reshape(self, bottom, top):
-        """
-        There is no need to reshape the data, since the input is of fixed size
-        (rows and columns)
-        """
-        pass
+        if self.shape is not None:
+            top[0].reshape(*self.shape)
+
+        top[1].reshape(1, 4)
 
     def backward(self, top, propagate_down, bottom):
-        """
-        These layers does not back propagate
-        """
-        pass
+        """Input layer does not back propagate"""
 
 
-def check_params(params):
-    """
-    A utility function to check the parameters for the data layers.
-    """
-
-    required = ['batch_size', 'gtsdb_root', 'window_size']
-    for r in required:
-        assert r in params.keys(), 'Params must include {}'.format(r)
+def parse_arguments(arg_string):
+    if not isinstance(arg_string, str) or not arg_string:
+        return {}
+    return eval(arg_string)
