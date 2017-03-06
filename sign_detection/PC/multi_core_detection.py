@@ -5,6 +5,9 @@ from sign_detection.model.ImageSource import ImageSource
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import cv2
 
+
+num_workers = 10
+
 def create_detector():
     """
     Create a detector
@@ -39,8 +42,9 @@ def test():
     :return:
     """
     un.setup_device(gpu=True)
+    global num_workers
     image_source = CV2ImageSource()
-    master = Master(create_detector, image_source, 1)
+    master = Master(create_detector, image_source, num_workers)
     master.register_roi_result_handler(ConsoleHandler())
     master.start()
     try:
