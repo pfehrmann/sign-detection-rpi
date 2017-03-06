@@ -16,6 +16,7 @@ def create_detector():
     """
     net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/mini_net_aug_scale/deploy.prototxt",
                       "../GTSDB/ActivationMapBoundingBoxes/mini_net_aug_scale/weights.caffemodel")
+    un.setup_device(gpu=True)
     detector = un.Detector(net,
                                 minimum=0.85,
                                 use_global_max=False,
@@ -41,7 +42,6 @@ def test():
     Sets up the master and starts detecting.
     :return:
     """
-    un.setup_device(gpu=True)
     global num_workers
     image_source = CV2ImageSource()
     master = Master(create_detector, image_source, num_workers)
