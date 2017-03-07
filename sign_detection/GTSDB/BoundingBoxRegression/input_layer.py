@@ -1,10 +1,6 @@
+import abc
+
 import caffe
-
-from pydoc import locate
-
-# TODO should be moved to input arguments
-default_shape_data = [1, 64, 2, 2]
-default_shape_label = [1, 4]
 
 
 class InputLayer(caffe.Layer):
@@ -15,11 +11,18 @@ class InputLayer(caffe.Layer):
     On each forward, the layer should reshape the top layer.
     """
 
+    @property
+    @abc.abstractproperty
+    def default_shape_data(self):
+        return []
+
+    @property
+    @abc.abstractproperty
+    def default_shape_label(self):
+        return []
+
     def __init__(self, p_object, *args, **kwargs):
         super(InputLayer, self).__init__(p_object, *args, **kwargs)
-
-        # Init class variables
-        self.data_source = None
 
     def setup(self, bottom, top):
         # Warn, if this layer got an input. It will be ignored.
@@ -28,18 +31,23 @@ class InputLayer(caffe.Layer):
 
         # Parse input arguments. These come from the net prototxt model
         args = parse_arguments(self.param_str)
-
-        # Import and create data source
-        data_class = locate(args['data_source_class'])
-        self.data_source = data_class(args)
+        self.apply_arguments(args)
 
         # Initial shaping is needed
-        top[0].reshape(*default_shape_data)
-        top[1].reshape(*default_shape_label)
+        top[0].reshape(*self.default_shape_data)
+        top[1].reshape(*self.default_shape_label)
+
+    @abc.abstractmethod
+    def apply_arguments(self, args):
+        pass
+
+    @abc.abstractmethod
+    def get_next_data(self):
+        return None, None
 
     def forward(self, bottom, top):
         # 1. Get new data to use
-        net_data, label_data = self.data_source.get_next_data()
+        net_data, label_data = self.get_next_data()
 
         # 2. Reshape the net and then push data into it
         top[0].reshape(*net_data.shape)

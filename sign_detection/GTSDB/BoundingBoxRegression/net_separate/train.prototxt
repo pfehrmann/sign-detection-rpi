@@ -1,19 +1,40 @@
 input: "input"
 layer {
-  name: "l_input"
+  name: "l_input_train"
   type: "Python"
   top: "input_data"
   top: "label"
+  phase: TRAIN
   python_param {
-    module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer'
-    layer: 'InputLayer'
-    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB", "data_source_class": "sign_detection.GTSDB.BoundingBoxRegression.activation_map_source.ActivationMapSource"}'
+    module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer_activation'
+    layer: 'InputLayerActivation'
+    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB"}'
   }
+}
+layer {
+    name: "l_conv"
+    type: "Convolution"
+    bottom: "input_data"
+    top: "conv"
+    convolution_param {
+      num_output: 16     # learn 96 filters
+      kernel_size: 6    # each filter is 11x11
+      stride: 1          # step 4 pixels between each filter application
+      pad: 4
+      weight_filler {
+        type: "gaussian" # initialize the filters from a Gaussian
+        std: 0.02        # distribution with stdev 0.01 (default mean: 0)
+      }
+      bias_filler {
+        type: "constant" # initialize the biases to zero (0)
+        value: 0
+      }
+    }
 }
 layer {
     name: "l_spp"
     type: "SPP"
-    bottom: "input_data"
+    bottom: "conv"
     top: "spp"
     spp_param {
         pool: MAX
@@ -62,6 +83,7 @@ layer {
 layer {
     name: "l_loss"
     type: "SigmoidCrossEntropyLoss"
+    phase: TRAIN
     bottom: "ip3"
     bottom: "label"
 }

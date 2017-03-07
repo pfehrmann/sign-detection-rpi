@@ -4,10 +4,21 @@ import caffe
 
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import sign_detection.tools.batchloader as bl
+from sign_detection.GTSDB.BoundingBoxRegression.input_layer import InputLayer
 
 
-class ActivationMapSource:
-    def __init__(self, args):
+class InputLayerActivation(InputLayer):
+
+    @property
+    def default_shape_label(self):
+        return [1, 4]
+
+    @property
+    def default_shape_data(self):
+        return [1, 64, 2, 2]
+
+    def __init__(self, p_object, *args, **kwargs):
+        super(InputLayerActivation, self).__init__(p_object, *args, **kwargs)
 
         # Init vars
         self.images = []  # type: list
@@ -15,7 +26,11 @@ class ActivationMapSource:
         self.image_max = -1  # type: int
         self.input_detector = None  # type: un.Detector
 
-        # Parse args
+        self.file_input_net = ''  # type: str
+        self.file_input_weights = ''  # type: str
+        self.location_gt = ''  # type: str
+
+    def apply_arguments(self, args):
         self.file_input_net = parse_arg(args, 'file_input_net', str)
         self.file_input_weights = parse_arg(args, 'file_input_weights', str)
         self.location_gt = parse_arg(args, 'location_gt', str)
@@ -44,6 +59,12 @@ class ActivationMapSource:
         d2 = (modified_roi.p2 - roi.p2).as_array
         v = d1 + d2
 
+        if False:
+            print 'DATA INFO:'
+            print 'ORI ROI: %s' % str(roi)
+            print 'MOD ROI: %s' % str(modified_roi)
+            print 'COR VEC: %s' % str(v)
+
         return self.calculate_activation(image_excerpt), v
 
     def calculate_activation(self, img):
@@ -71,8 +92,8 @@ class ActivationMapSource:
 
 def parse_arg(params, arg, arg_type):
     if arg not in params:
-        raise Exception('Input layer: Missing setup param "{0}"' % arg)
+        raise Exception('ActivationMapSource: Missing setup param "{0}"' % arg)
     val = params[arg]
     if not isinstance(val, arg_type):
-        raise Exception('Input layer: Setup param "{0}" has invalid type' % arg)
+        raise Exception('ActivationMapSource: Setup param "{0}" has invalid type' % arg)
     return val
