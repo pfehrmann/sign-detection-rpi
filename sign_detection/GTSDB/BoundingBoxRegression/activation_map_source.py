@@ -2,7 +2,6 @@ from random import shuffle
 
 import caffe
 
-from sign_detection.GTSDB.BoundingBoxRegression.input_data import InputData
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import sign_detection.tools.batchloader as bl
 
@@ -40,14 +39,12 @@ class ActivationMapSource:
         modified_roi = roi.clone().disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
         image_excerpt = img_raw[modified_roi.y1:modified_roi.y2, modified_roi.x1:modified_roi.x2, :]
 
+        # Create loss vector
         d1 = (modified_roi.p1 - roi.p1).as_array
         d2 = (modified_roi.p2 - roi.p2).as_array
         v = d1 + d2
 
-        # print 'img size: {0} | vec: {1}'.format(image_excerpt.shape, v)
-
-        # Create data object to return
-        return InputData(self.calculate_activation(image_excerpt), v)
+        return self.calculate_activation(image_excerpt), v
 
     def calculate_activation(self, img):
         return self.input_detector.get_activation(img)

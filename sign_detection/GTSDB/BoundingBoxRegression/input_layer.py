@@ -1,8 +1,8 @@
 import caffe
 
-from sign_detection.GTSDB.BoundingBoxRegression.activation_map_source import ActivationMapSource
+from pydoc import locate
 
-# TODO is this a good default shape? It will be used at least once.
+# TODO should be moved to input arguments
 default_shape_data = [1, 64, 2, 2]
 default_shape_label = [1, 4]
 
@@ -29,8 +29,9 @@ class InputLayer(caffe.Layer):
         # Parse input arguments. These come from the net prototxt model
         args = parse_arguments(self.param_str)
 
-        # Create class that generates the data blobs
-        self.data_source = ActivationMapSource(args)
+        # Import and create data source
+        data_class = locate(args['data_source_class'])
+        self.data_source = data_class(args)
 
         # Initial shaping is needed
         top[0].reshape(*default_shape_data)
@@ -38,14 +39,14 @@ class InputLayer(caffe.Layer):
 
     def forward(self, bottom, top):
         # 1. Get new data to use
-        data = self.data_source.get_next_data()
+        net_data, label_data = self.data_source.get_next_data()
 
         # 2. Reshape the net and then push data into it
-        top[0].reshape(*data.net_data.shape)
-        top[0].data[...] = data.net_data
+        top[0].reshape(*net_data.shape)
+        top[0].data[...] = net_data
 
         # 3. Push label data into loss
-        top[1].data[...] = data.loss_data
+        top[1].data[...] = label_data
 
     def reshape(self, bottom, top):
         """Reshaping is done manually"""

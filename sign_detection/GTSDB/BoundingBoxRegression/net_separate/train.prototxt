@@ -7,7 +7,7 @@ layer {
   python_param {
     module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer'
     layer: 'InputLayer'
-    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB"}'
+    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB", "data_source_class": "sign_detection.GTSDB.BoundingBoxRegression.activation_map_source.ActivationMapSource"}'
   }
 }
 layer {
