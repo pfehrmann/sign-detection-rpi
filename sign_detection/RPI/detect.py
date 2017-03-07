@@ -2,33 +2,13 @@ import picamera
 import picamera.array
 import cv2
 
+import sys
+caffe_path = "/home/pi/development/caffe/build/install/python"
+if not caffe_path in sys.path:
+    sys.path.append(caffe_path)
+
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 from time import time
-import sys
-
-
-def trace_calls(frame, event, arg):
-    if event not in ['call', 'c_call']:
-        return
-    co = frame.f_code
-    func_name = co.co_name
-    if func_name == 'write':
-        # Ignore write() calls from print statements
-        return
-    func_line_no = frame.f_lineno
-    func_filename = co.co_filename
-    caller = frame.f_back
-    if caller is None:
-        return
-    caller_line_no = caller.f_lineno
-    caller_filename = caller.f_code.co_filename
-    print 'Call to %s on line %s of %s from line %s of %s' % \
-          (func_name, func_line_no, func_filename,
-           caller_line_no, caller_filename)
-    return
-
-
-# sys.settrace(trace_calls)
 
 
 def identify_regions(save=False, display=True, resultion=(640, 480)):

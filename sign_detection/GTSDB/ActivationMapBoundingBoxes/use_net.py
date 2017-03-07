@@ -1,14 +1,15 @@
 import caffe
-
-import numpy as np
 import cv2
-from sign_detection.model.RegionOfInterest import RegionOfInterest
-from sign_detection.model.PossibleROI import PossibleROI
-from sign_detection.model.Sign import get_name_from_category
+import numpy as np
 from matplotlib import pyplot as plt
 
+from sign_detection.model.DetectorBase import DetectorBase
+from sign_detection.model.PossibleROI import PossibleROI
+from sign_detection.model.RegionOfInterest import RegionOfInterest
+from sign_detection.model.Sign import get_name_from_category
 
-class Detector:
+
+class Detector(DetectorBase):
     """
     Use this lass to detect signs using a method similar to Faster RCNNs
     """
@@ -55,13 +56,13 @@ class Detector:
         self.average_value = average_value
         self.modify_average_value = modify_average_value
 
-    def identify_regions_from_image(self, im, unmodified):
+    def identify_regions_from_image(self, im, unmodified=None):
         """
         Load and process a net and image
         :param unmodified: The unmodified version of the image to draw on
         :param im: The image to work with
         :return: Returns all the found ROIs as a list of PossibleROI elements.
-        :returns: list[PossibleROI]
+        :returns: (list[PossibleROI], list[PossibleROI])
         """
 
         if self.modify_average_value:
@@ -74,17 +75,18 @@ class Detector:
 
         # remove overlapping regions
         unfiltered_rois = self.remove_overlapping_regions(overlapping_rois)
-        print "Checking {} rois".format(len(unfiltered_rois))
+        # print "Checking {} rois".format(len(unfiltered_rois))
 
         # check each roi individually
         self._check_rois(im, unfiltered_rois)
 
         # filter all the rois with a too low possibility
         rois = [roi for roi, activation_map in unfiltered_rois if roi.probability >= self.minimum]
+        unfiltered_rois_ret = [roi for roi, activation_map in unfiltered_rois]
 
-        if self.draw_results:
-            self.draw_results_to_image(rois, unfiltered_rois, unmodified)
-        return rois, unfiltered_rois
+        if self.draw_results and unmodified is not None:
+            self.draw_results_to_image(rois, unfiltered_rois_ret, unmodified)
+        return rois, unfiltered_rois_ret
 
     def remove_overlapping_regions(self, overlapping_rois):
         """
@@ -98,8 +100,9 @@ class Detector:
     def collect_regions(self, im):
         """
         Get regions from all sizes of images
-        :param im:
-        :return:
+        :param im: The image to check
+        :return: Returns a list of Possible Rois and the uncropped activation maps
+        :returns: list[(PossibleROI, np.ndarray)]
         """
         overlapping_rois = []
         for step in self.zoom:
