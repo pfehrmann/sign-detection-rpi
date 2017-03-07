@@ -2,6 +2,10 @@ import caffe
 
 from sign_detection.GTSDB.BoundingBoxRegression.activation_map_source import ActivationMapSource
 
+# TODO is this a good default shape? It will be used at least once.
+default_shape_data = [1, 64, 2, 2]
+default_shape_label = [1, 4]
+
 
 class InputLayer(caffe.Layer):
     """
@@ -15,10 +19,7 @@ class InputLayer(caffe.Layer):
         super(InputLayer, self).__init__(p_object, *args, **kwargs)
 
         # Init class variables
-        # TODO is this a good default shape? It will be used at least once.
-        self.shape = [1, 64, 2, 2]  # type: list
         self.data_source = None
-        self.net = None  # type: caffe.Net
 
     def setup(self, bottom, top):
         # Warn, if this layer got an input. It will be ignored.
@@ -28,11 +29,12 @@ class InputLayer(caffe.Layer):
         # Parse input arguments. These come from the net prototxt model
         args = parse_arguments(self.param_str)
 
-        # Create source class
+        # Create class that generates the data blobs
         self.data_source = ActivationMapSource(args)
 
-        top[1].reshape(1, 4)
-        top[0].reshape(*self.shape)
+        # Initial shaping is needed
+        top[0].reshape(*default_shape_data)
+        top[1].reshape(*default_shape_label)
 
     def forward(self, bottom, top):
         # 1. Get new data to use
