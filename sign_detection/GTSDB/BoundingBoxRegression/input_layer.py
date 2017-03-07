@@ -1,7 +1,6 @@
 import caffe
 
 from sign_detection.GTSDB.BoundingBoxRegression.activation_map_source import ActivationMapSource
-from sign_detection.model.IdentifiedImage import IdentifiedImage
 
 
 class InputLayer(caffe.Layer):
@@ -22,8 +21,6 @@ class InputLayer(caffe.Layer):
         self.net = None  # type: caffe.Net
 
     def setup(self, bottom, top):
-        self.top_names = ['data', 'label']  # TODO Do we need that?
-
         # Warn, if this layer got an input. It will be ignored.
         if len(bottom) > 0:
             print "Warning: Input layer will ignore bottom layers."
@@ -34,26 +31,27 @@ class InputLayer(caffe.Layer):
         # Create source class
         self.data_source = ActivationMapSource(args)
 
+        top[1].reshape(1, 4)
+        top[0].reshape(*self.shape)
+
     def forward(self, bottom, top):
         # 1. Get new data to use
         data = self.data_source.get_next_data()
 
         # 2. Reshape the net and then push data into it
-        self.shape = data.net_data.shape
-        self.reshape(None, top)
+        top[0].reshape(*data.net_data.shape)
         top[0].data[...] = data.net_data
 
         # 3. Push label data into loss
         top[1].data[...] = data.loss_data
 
     def reshape(self, bottom, top):
-        if self.shape is not None:
-            top[0].reshape(*self.shape)
-
-        top[1].reshape(1, 4)
+        """Reshaping is done manually"""
+        pass
 
     def backward(self, top, propagate_down, bottom):
         """Input layer does not back propagate"""
+        pass
 
 
 def parse_arguments(arg_string):
