@@ -117,6 +117,10 @@ class EV3Handler(RoiResultHandler):
             movement.move(5, 0, self.ev3)
             images.show_image("../prjs/Signs/SIGN_SPEED_30.rgf", self.ev3)
 
+        if is_sign_in_n_rois(13, self.last_rois, self.min_frame_count):
+            movement.move(3, 0, self.ev3)
+            images.show_image("../prjs/Signs/SIGN_GIVE_WAY.rgf", self.ev3)
+
         if is_sign_in_n_rois(14, self.last_rois, self.min_frame_count):
             movement.move(0, 0, self.ev3)
             images.show_image("../prjs/Signs/SIGN_STOP.rgf", self.ev3)
