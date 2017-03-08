@@ -14,7 +14,4 @@ def train(solver_name="solver.prototxt", gpu=False):
     solver.solve()
 
 
-
-
-
 train("net_separate/solver.prototxt", True)

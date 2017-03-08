@@ -1,5 +1,7 @@
 from random import random
 
+from sign_detection.model.Vector import Vector, from_array
+
 
 class RegionOfInterest(object):
     def __init__(self, x1, y1, x2, y2, sign):
@@ -11,45 +13,57 @@ class RegionOfInterest(object):
         :type sign: int
         """
 
-        self.__x1 = int(x1)
-        self.__y1 = int(y1)
-
-        self.__x2 = int(x2)
-        self.__y2 = int(y2)
-
+        self.__p1 = Vector(int(x1), int(y1))
+        self.__p2 = Vector(int(x2), int(y2))
         self.__sign = sign
 
     @property
     def x1(self):
-        return self.__x1
+        return self.__p1.x
 
     @x1.setter
     def x1(self, value):
-        self.__x1 = value
+        self.__p1.x = int(value)
 
     @property
     def y1(self):
-        return self.__y1
+        return self.__p1.y
 
     @y1.setter
     def y1(self, value):
-        self.__y1 = value
+        self.__p1.y = int(value)
 
     @property
     def x2(self):
-        return self.__x2
+        return self.__p2.x
 
     @x2.setter
     def x2(self, value):
-        self.__x2 = value
+        self.__p2.x = int(value)
 
     @property
     def y2(self):
-        return self.__y2
+        return self.__p2.y
 
     @y2.setter
     def y2(self, value):
-        self.__y2 = value
+        self.__p2.y = int(value)
+
+    @property
+    def p1(self):
+        return self.__p1
+
+    @p1.setter
+    def p1(self, value):
+        self.__p1 = value
+
+    @property
+    def p2(self):
+        return self.__p2
+
+    @p2.setter
+    def p2(self, value):
+        self.__p2 = value
 
     @property
     def sign(self):
@@ -61,37 +75,34 @@ class RegionOfInterest(object):
 
     @property
     def size(self):
-        return [self.x2 - self.x1, self.y2 - self.y1]
+        return (self.p2 - self.p1).as_array
 
     @size.setter
     def size(self, size):
-        self.x2 = self.x1 + size[0]
-        self.y2 = self.y1 + size[1]
+        self.p2 = self.p1 + from_array(size)
 
     @property
     def position(self):
-        return [self.x1, self.y2]
+        return self.p1.as_array
 
     @position.setter
     def position(self, value):
-        self.x2 += value[0] - self.x1
-        self.y2 += value[1] - self.y1
-        self.x1 = value[0]
-        self.y1 = value[1]
+        v = from_array(value)
+        self.p2 += + v - self.__p1
+        self.p1 = v
 
     @property
     def width(self):
-        return self.x2 - self.x1
+        return self.p2.x - self.p1.x
 
     @property
     def height(self):
-        return self.y2 - self.y1
+        return self.p2.y - self.p1.y
 
     def move(self, v):
-        self.x1 += v[0]
-        self.x2 += v[0]
-        self.y1 += v[1]
-        self.y2 += v[1]
+        vec = from_array(v)
+        self.p1 += vec
+        self.p2 += vec
         return self
 
     def get_overlap(self, other):
@@ -136,7 +147,7 @@ class RegionOfInterest(object):
         self.y2 += dy
 
     def area(self):
-        return (self.x1 - self.x2) * (self.y1 - self.y2)
+        return self.width * self.height
 
     def similar(self, other, min_overlap):
         return self.get_overlap(other) > min_overlap
@@ -153,17 +164,22 @@ class RegionOfInterest(object):
         return RegionOfInterest(self.x1, self.y1, self.x2, self.y2, self.sign)
 
     def add_padding(self, size):
-        self.x1 -= size
-        self.y1 -= size
-        self.x2 += size
-        self.y2 += size
+        v = Vector(size, size)
+        self.p1 -= v
+        self.p2 += v
         return self
 
-    def disturb(self, move_by=0.5):
-        size = self.size[:]
-        size[0] = int(size[0] * (random() * 2 - 1) * move_by)
-        size[1] = int(size[1] * (random() * 2 - 1) * move_by)
-        self.move(size)
+    def disturb(self, move_by=0.4, stretch_by=0.1):
+        move = self.size
+        move[0] = int(move[0] * (random() * 2 - 1) * move_by)
+        move[1] = int(move[1] * (random() * 2 - 1) * move_by)
+        self.move(move)
+        stretch = self.size
+        stretch[0] = int(stretch[0] * (random() * 2 - 1) * stretch_by / 2)
+        stretch[1] = int(stretch[1] * (random() * 2 - 1) * stretch_by / 2)
+        stretch_arr = from_array(stretch)
+        self.__p1 -= stretch_arr
+        self.__p2 += stretch_arr
         return self
 
     def ensure_bounds(self, max_x, max_y, min_x=0, min_y=0):
@@ -173,5 +189,9 @@ class RegionOfInterest(object):
         self.y2 = min(self.y2, max_y)
         return self
 
-    def get_vector(self):
-        return [self.x1, self.x2, self.y1, self.x2]
+    @property
+    def center(self):
+        return [a + b for a, b in zip(self.position, self.size)]
+
+    def get_distance(self, roi2):
+        return [b - a for a, b in zip(self.center, roi2.center)]

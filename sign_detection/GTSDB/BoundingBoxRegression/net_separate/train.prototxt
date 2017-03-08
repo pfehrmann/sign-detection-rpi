@@ -26,7 +26,7 @@ layer {
   bottom: "spp"
   top: "ip1"
   inner_product_param {
-    num_output: 200
+    num_output: 1000
     weight_filler {
       type: "gaussian"
       std: 0.02
@@ -39,7 +39,7 @@ layer {
   bottom: "ip1"
   top: "ip2"
   inner_product_param {
-    num_output: 200
+    num_output: 1000
     weight_filler {
       type: "gaussian"
       std: 0.02

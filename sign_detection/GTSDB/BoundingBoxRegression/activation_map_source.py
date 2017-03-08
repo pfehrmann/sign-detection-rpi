@@ -8,16 +8,12 @@ import sign_detection.tools.batchloader as bl
 
 
 class ActivationMapSource:
-
     def __init__(self, args):
 
         # Init vars
         self.images = []  # type: list
         self.image_current = -1  # type: int
         self.image_max = -1  # type: int
-        self.data = []  # type: list
-        self.data_current = -1  # type: int
-        self.data_max = -1  # type: int
         self.input_detector = None  # type: un.Detector
 
         # Parse args
@@ -30,40 +26,41 @@ class ActivationMapSource:
         self.load_images()
 
     def get_next_data(self):
-        self.data_current += 1
-        if self.data_current >= self.data_max:
-            self.load_next_image()
-            return self.get_next_data()
-        return self.data[self.data_current]
-
-    def load_next_image(self):
+        # Increase image counter
         self.image_current += 1
         if self.image_current >= self.image_max:
             self.image_current = 0
             shuffle(self.images)
-            # TODO what if 0 images there?
 
-        img_inf = self.images[self.image_current]
-        img_raw = caffe.io.load_image(img_inf.path)
+        # Get net image
+        path, roi = self.images[self.image_current]
+        img_raw = caffe.io.load_image(path)
 
-        rois = [roi.clone()
-                .disturb()
-                .add_padding(11)
-                .ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
-                for roi in img_inf.get_region_of_interests()]
+        # Modify image
+        modified_roi = roi.clone().disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
+        image_excerpt = img_raw[modified_roi.y1:modified_roi.y2, modified_roi.x1:modified_roi.x2, :]
 
-        self.data = [InputData(self.calculate_activation(img_raw[roi.y1:roi.y2, roi.x1:roi.x2, :]), roi.get_vector())
-                     for roi in rois]
-        self.data_max = len(self.data)
-        self.data_current = -1
+        d1 = (modified_roi.p1 - roi.p1).as_array
+        d2 = (modified_roi.p2 - roi.p2).as_array
+        v = d1 + d2
+
+        # print 'img size: {0} | vec: {1}'.format(image_excerpt.shape, v)
+
+        # Create data object to return
+        return InputData(self.calculate_activation(image_excerpt), v)
 
     def calculate_activation(self, img):
         return self.input_detector.get_activation(img)
 
     def load_images(self):
         image_info_list = bl.get_images_and_regions(self.location_gt)
-        self.images = image_info_list
+        self.images = [(img.path, region.add_padding(11))
+                       for img in image_info_list for region in img.region_of_interests]
+        shuffle(self.images)
         self.image_max = len(self.images)
+        if self.image_max < 1:
+            raise Exception('No images for training found.')
+        print "Got {0} Boxes.".format(self.image_max)
 
     def load_input_detector(self):
         net = un.load_net(self.file_input_net, self.file_input_weights)
