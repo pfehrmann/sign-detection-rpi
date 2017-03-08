@@ -16,3 +16,18 @@ class PossibleROI(RegionOfInterest):
     @probability.getter
     def probability(self):
         return self._probability
+
+    def __str__(self):
+        return '(roi:{roi}, prob:{p}, zoom:{z})'.format(
+            roi=super(PossibleROI, self).__str__(),
+            p=self._probability,
+            z=self.zoom_factor)
+
+    @property
+    def unscaled(self):
+        return PossibleROI(
+            self.x1 / self.zoom_factor[0],
+            self.y1 / self.zoom_factor[1],
+            self.x2 / self.zoom_factor[0],
+            self.y2 / self.zoom_factor[1],
+            self.sign, self._probability, 1, 1)

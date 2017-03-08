@@ -169,7 +169,7 @@ class RegionOfInterest(object):
         self.p2 += v
         return self
 
-    def disturb(self, move_by=0.4, stretch_by=0.1):
+    def disturb(self, move_by=0.4, stretch_by=0.3):
         move = self.size
         move[0] = int(move[0] * (random() * 2 - 1) * move_by)
         move[1] = int(move[1] * (random() * 2 - 1) * move_by)

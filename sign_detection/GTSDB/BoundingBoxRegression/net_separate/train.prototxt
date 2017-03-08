@@ -17,16 +17,16 @@ layer {
     bottom: "input_data"
     top: "conv"
     convolution_param {
-      num_output: 16     # learn 96 filters
-      kernel_size: 6    # each filter is 11x11
-      stride: 1          # step 4 pixels between each filter application
+      num_output: 64
+      kernel_size: 7
+      stride: 1
       pad: 4
       weight_filler {
-        type: "gaussian" # initialize the filters from a Gaussian
-        std: 0.02        # distribution with stdev 0.01 (default mean: 0)
+        type: "gaussian"
+        std: 0.02
       }
       bias_filler {
-        type: "constant" # initialize the biases to zero (0)
+        type: "constant"
         value: 0
       }
     }
@@ -38,7 +38,7 @@ layer {
     top: "spp"
     spp_param {
         pool: MAX
-        pyramid_height: 2
+        pyramid_height: 3
     }
 }
 layer {
@@ -47,7 +47,7 @@ layer {
   bottom: "spp"
   top: "ip1"
   inner_product_param {
-    num_output: 1000
+    num_output: 2048
     weight_filler {
       type: "gaussian"
       std: 0.02
@@ -60,7 +60,7 @@ layer {
   bottom: "ip1"
   top: "ip2"
   inner_product_param {
-    num_output: 1000
+    num_output: 2048
     weight_filler {
       type: "gaussian"
       std: 0.02
@@ -73,6 +73,19 @@ layer {
   bottom: "ip2"
   top: "ip3"
   inner_product_param {
+    num_output: 2048
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "l_ip4"
+  type: "InnerProduct"
+  bottom: "ip3"
+  top: "out"
+  inner_product_param {
     num_output: 4
     weight_filler {
       type: "gaussian"
@@ -84,6 +97,6 @@ layer {
     name: "l_loss"
     type: "SigmoidCrossEntropyLoss"
     phase: TRAIN
-    bottom: "ip3"
+    bottom: "out"
     bottom: "label"
 }

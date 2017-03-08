@@ -1,6 +1,7 @@
 from random import shuffle
 
 import caffe
+import cv2
 
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import sign_detection.tools.batchloader as bl
@@ -53,6 +54,7 @@ class InputLayerActivation(InputLayer):
         # Modify image
         modified_roi = roi.clone().disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
         image_excerpt = img_raw[modified_roi.y1:modified_roi.y2, modified_roi.x1:modified_roi.x2, :]
+        image_excerpt = cv2.cvtColor(image_excerpt, cv2.COLOR_BGR2RGB)
 
         # Create loss vector
         d1 = (modified_roi.p1 - roi.p1).as_array

@@ -1,7 +1,7 @@
 net: "net_separate/train.prototxt"
 test_iter: 800
 test_interval: 1000
-base_lr: 0.00001
+base_lr: 0.000005
 display: 5
 max_iter: 800
 iter_size: 10
@@ -11,7 +11,7 @@ momentum: 0.9
 weight_decay: 3e-05
 stepsize: 400
 random_seed: 42
-snapshot: 500
+snapshot: 100
 snapshot_prefix: "data/snapshot/"
 solver_mode: GPU
 type: "SGD"
