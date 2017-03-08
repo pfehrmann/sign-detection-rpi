@@ -1,6 +1,5 @@
 import cv2
 
-import sign_detection.EV3.EV3 as ev3
 import sign_detection.EV3.movement as movement
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 from sign_detection.GTSDB.multi_processor_detection import RoiResultHandler
@@ -81,15 +80,21 @@ class ViewHandler(RoiResultHandler):
 class EV3Handler(RoiResultHandler):
     """
     :type fps: list[float]
+    :type ev3: sign_detection.EV3.EV3.EV3
     """
 
-    def __init__(self, queue_size=5, min_frame_count=3):
+    def __init__(self, ev3_instance, queue_size=5, min_frame_count=3):
+        """
+
+        :param ev3_instance:
+        :param queue_size:
+        :param min_frame_count:
+        :type ev3_instance: sign_detection.EV3.EV3.EV3
+        """
+
         self.min_frame_count = min_frame_count
         self.queue_size = queue_size
-        self.ev3 = ev3.EV3(protocol=ev3.USB, host='00:16:53:47:92:46')
-        self.ev3.sync_mode = ev3.ASYNC
-        # self.ev3.verbosity = 1
-        # movement.move(0, 0, self.ev3)
+        self.ev3 = ev3_instance
         self.last_rois = []
 
     def handle_result(self, index, image_timestamp, result_timestamp, rois, possible_rois, image):

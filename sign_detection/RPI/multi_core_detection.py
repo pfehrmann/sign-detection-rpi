@@ -4,6 +4,7 @@ if not caffe_path in sys.path:
     sys.path.append(caffe_path)
 
 from sign_detection.GTSDB.image_sources import PiCameraImageSource
+import sign_detection.EV3.EV3 as ev3
 from sign_detection.GTSDB.roi_result_handlers import EV3Handler, ConsoleHandler
 
 import time
@@ -52,6 +53,9 @@ def test():
     image_source = PiCameraImageSource()
     master = Master(create_detector, image_source, num_workers)
     master.register_roi_result_handler(EV3Handler())
+    my_ev3 = ev3.EV3(protocol=ev3.USB, host='00:16:53:47:92:46')
+    my_ev3.sync_mode = ev3.ASYNC
+    master.register_roi_result_handler(EV3Handler(my_ev3))
     master.register_roi_result_handler(ConsoleHandler(num_workers))
     master.start()
     try:
