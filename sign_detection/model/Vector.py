@@ -22,6 +22,9 @@ class Vector:
     def __rsub__(self, other):
         return Vector(self.x - other, self.y - other)
 
+    def __str__(self):
+        return str([self.x, self.y])
+
 
 def from_array(arr):
     return Vector(arr[0], arr[1])

@@ -1,23 +1,44 @@
 input: "input"
 layer {
-  name: "l_input"
+  name: "l_input_train"
   type: "Python"
   top: "input_data"
   top: "label"
+  phase: TRAIN
   python_param {
-    module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer'
-    layer: 'InputLayer'
+    module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer_activation'
+    layer: 'InputLayerActivation'
     param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB"}'
   }
 }
 layer {
+    name: "l_conv"
+    type: "Convolution"
+    bottom: "input_data"
+    top: "conv"
+    convolution_param {
+      num_output: 64
+      kernel_size: 7
+      stride: 1
+      pad: 4
+      weight_filler {
+        type: "gaussian"
+        std: 0.02
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+layer {
     name: "l_spp"
     type: "SPP"
-    bottom: "input_data"
+    bottom: "conv"
     top: "spp"
     spp_param {
         pool: MAX
-        pyramid_height: 2
+        pyramid_height: 3
     }
 }
 layer {
@@ -26,7 +47,7 @@ layer {
   bottom: "spp"
   top: "ip1"
   inner_product_param {
-    num_output: 1000
+    num_output: 2048
     weight_filler {
       type: "gaussian"
       std: 0.02
@@ -39,7 +60,7 @@ layer {
   bottom: "ip1"
   top: "ip2"
   inner_product_param {
-    num_output: 1000
+    num_output: 2048
     weight_filler {
       type: "gaussian"
       std: 0.02
@@ -52,6 +73,19 @@ layer {
   bottom: "ip2"
   top: "ip3"
   inner_product_param {
+    num_output: 2048
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "l_ip4"
+  type: "InnerProduct"
+  bottom: "ip3"
+  top: "out"
+  inner_product_param {
     num_output: 4
     weight_filler {
       type: "gaussian"
@@ -62,6 +96,7 @@ layer {
 layer {
     name: "l_loss"
     type: "SigmoidCrossEntropyLoss"
-    bottom: "ip3"
+    phase: TRAIN
+    bottom: "out"
     bottom: "label"
 }

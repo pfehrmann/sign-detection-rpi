@@ -1,14 +1,25 @@
 from random import shuffle
 
 import caffe
+import cv2
 
-from sign_detection.GTSDB.BoundingBoxRegression.input_data import InputData
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import sign_detection.tools.batchloader as bl
+from sign_detection.GTSDB.BoundingBoxRegression.input_layer import InputLayer
 
 
-class ActivationMapSource:
-    def __init__(self, args):
+class InputLayerActivation(InputLayer):
+
+    @property
+    def default_shape_label(self):
+        return [1, 4]
+
+    @property
+    def default_shape_data(self):
+        return [1, 64, 2, 2]
+
+    def __init__(self, p_object, *args, **kwargs):
+        super(InputLayerActivation, self).__init__(p_object, *args, **kwargs)
 
         # Init vars
         self.images = []  # type: list
@@ -16,7 +27,11 @@ class ActivationMapSource:
         self.image_max = -1  # type: int
         self.input_detector = None  # type: un.Detector
 
-        # Parse args
+        self.file_input_net = ''  # type: str
+        self.file_input_weights = ''  # type: str
+        self.location_gt = ''  # type: str
+
+    def apply_arguments(self, args):
         self.file_input_net = parse_arg(args, 'file_input_net', str)
         self.file_input_weights = parse_arg(args, 'file_input_weights', str)
         self.location_gt = parse_arg(args, 'location_gt', str)
@@ -39,15 +54,20 @@ class ActivationMapSource:
         # Modify image
         modified_roi = roi.clone().disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
         image_excerpt = img_raw[modified_roi.y1:modified_roi.y2, modified_roi.x1:modified_roi.x2, :]
+        image_excerpt = cv2.cvtColor(image_excerpt, cv2.COLOR_BGR2RGB)
 
+        # Create loss vector
         d1 = (modified_roi.p1 - roi.p1).as_array
         d2 = (modified_roi.p2 - roi.p2).as_array
         v = d1 + d2
 
-        # print 'img size: {0} | vec: {1}'.format(image_excerpt.shape, v)
+        if False:
+            print 'DATA INFO:'
+            print 'ORI ROI: %s' % str(roi)
+            print 'MOD ROI: %s' % str(modified_roi)
+            print 'COR VEC: %s' % str(v)
 
-        # Create data object to return
-        return InputData(self.calculate_activation(image_excerpt), v)
+        return self.calculate_activation(image_excerpt), v
 
     def calculate_activation(self, img):
         return self.input_detector.get_activation(img)
@@ -74,8 +94,8 @@ class ActivationMapSource:
 
 def parse_arg(params, arg, arg_type):
     if arg not in params:
-        raise Exception('Input layer: Missing setup param "{0}"' % arg)
+        raise Exception('ActivationMapSource: Missing setup param "{0}"' % arg)
     val = params[arg]
     if not isinstance(val, arg_type):
-        raise Exception('Input layer: Setup param "{0}" has invalid type' % arg)
+        raise Exception('ActivationMapSource: Setup param "{0}" has invalid type' % arg)
     return val

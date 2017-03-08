@@ -14,12 +14,14 @@ def load_net(model, weights):
     transformer.set_raw_scale('data', 255.0)
     return net, transformer
 
+
 def setup_device(gpu=True, device=0):
     if gpu:
         caffe.set_mode_gpu()
         caffe.set_device(device)
     else:
         caffe.set_mode_cpu()
+
 
 def supply_image(image_array, net, transformer=None, width=64, height=64):
     if transformer is None:
@@ -32,6 +34,7 @@ def supply_image(image_array, net, transformer=None, width=64, height=64):
     else:
         net.blobs['data'].data[...] = transformer.preprocess('data', image_array)
     return net
+
 
 def load_image(image_path, net, transformer):
     # load the image in the data layer

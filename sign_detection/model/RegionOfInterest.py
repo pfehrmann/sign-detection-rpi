@@ -15,7 +15,7 @@ class RegionOfInterest(object):
 
         self.__p1 = Vector(int(x1), int(y1))
         self.__p2 = Vector(int(x2), int(y2))
-        self.__sign = sign
+        self.__sign = int(sign)
 
     @property
     def x1(self):
@@ -169,7 +169,7 @@ class RegionOfInterest(object):
         self.p2 += v
         return self
 
-    def disturb(self, move_by=0.4, stretch_by=0.1):
+    def disturb(self, move_by=0.4, stretch_by=0.3):
         move = self.size
         move[0] = int(move[0] * (random() * 2 - 1) * move_by)
         move[1] = int(move[1] * (random() * 2 - 1) * move_by)
@@ -195,3 +195,6 @@ class RegionOfInterest(object):
 
     def get_distance(self, roi2):
         return [b - a for a, b in zip(self.center, roi2.center)]
+
+    def __str__(self):
+        return '(p1:{p1}, p2:{p2}, sign:{sign:02d})'.format(p1=str(self.p1), p2=str(self.p2), sign=self.sign)
