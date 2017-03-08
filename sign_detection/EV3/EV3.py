@@ -406,7 +406,7 @@ class EV3:
             self._socket.send(cmd)
         elif self._protocol is USB:
             # pylint: disable=no-member
-            self._device.write(_EP_OUT, cmd, 100)
+            self._device.write(_EP_OUT, cmd, 2000)
             # pylint: enable=no-member
         else:
             raise RuntimeError('No EV3 connected')
@@ -516,7 +516,7 @@ class EV3:
         if self._protocol in [BLUETOOTH, WIFI]:
             self._socket.send(cmd)
         elif self._protocol is USB:
-            self._device.write(_EP_OUT, cmd, 100)
+            self._device.write(_EP_OUT, cmd, 2000)
         else:
             raise RuntimeError('No EV3 connected')
         # pylint: enable=no-member

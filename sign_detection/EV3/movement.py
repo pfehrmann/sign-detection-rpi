@@ -1,7 +1,6 @@
 import sign_detection.EV3.EV3 as ev3
 import time
 
-
 def move(speed, turn, my_e_v3):
     if turn > 0:
         speed_right = speed
@@ -36,6 +35,9 @@ def stop(my_e_v3):
 
 
 if __name__ == "__main__":
-    move(10, 0)
-    time.sleep(20)
-    move(0, 0)
+    myEv3 = ev3.EV3(protocol=ev3.USB, host='00:16:53:47:92:46')
+    move(10, 0, myEv3)
+    time.sleep(1)
+    move(0, 0, myEv3)
+    time.sleep(0.1)
+    stop(myEv3)

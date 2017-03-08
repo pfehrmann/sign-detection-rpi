@@ -57,12 +57,12 @@ class Master(object):
                 results.append(self._result_queue.get())
 
             # order the results by their image_index
-            results.sort(key=lambda (index, image_timestamp, result_timestamp, result): index)
+            results.sort(key=lambda (index, image_timestamp, result_timestamp, result, image, possible_rois): index)
 
             # notify all clients
-            for (index, image_timestamp, result_timestamp, result) in results:
+            for index, image_timestamp, result_timestamp, result, image, possible_rois in results:
                 for handler in self._result_handlers:
-                    handler.handle_result(index, image_timestamp, result_timestamp, result)
+                    handler.handle_result(index, image_timestamp, result_timestamp, result, image, possible_rois)
 
         # terminate the workers
         for worker in workers:
@@ -135,14 +135,14 @@ class Worker(object):
         while not self.__stop__:
             (index, image_timestamp, image) = self.image_queue.get()
             rois, unfiltered = self.detector.identify_regions_from_image(image)
-            self.result_queue.put((index, image_timestamp, time.time(), rois))
+            self.result_queue.put((index, image_timestamp, time.time(), rois, unfiltered, image))
 
 
 class RoiResultHandler(object):
     """
     An abstract class for handling detection results
     """
-    def handle_result(self, index, image_timestamp, result_timestamp, rois):
+    def handle_result(self, index, image_timestamp, result_timestamp, rois, possible_rois, image):
         """
         Handles the result of a detection
         :param rois: The rois found
@@ -151,5 +151,7 @@ class RoiResultHandler(object):
         :type image_timestamp: float
         :type result_timestamp: float
         :type rois: list[sign_detection.model.PossibleROI.PossibleROI]
+        :type possible_rois: list[sign_detection.model.PossibleROI.PossibleROI]
+        :type image: numpy.ndarray
         """
         raise NotImplementedError()
