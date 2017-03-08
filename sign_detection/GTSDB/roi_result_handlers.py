@@ -1,6 +1,7 @@
 import cv2
 
 import sign_detection.EV3.movement as movement
+import sign_detection.EV3.images as images
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 from sign_detection.GTSDB.multi_processor_detection import RoiResultHandler
 
@@ -114,9 +115,11 @@ class EV3Handler(RoiResultHandler):
 
         if is_sign_in_n_rois(1, self.last_rois, self.min_frame_count):
             movement.move(5, 0, self.ev3)
+            images.show_image("../prjs/Signs/SIGN_SPEED_30.rgf", self.ev3)
 
         if is_sign_in_n_rois(14, self.last_rois, self.min_frame_count):
             movement.move(0, 0, self.ev3)
+            images.show_image("../prjs/Signs/SIGN_STOP.rgf", self.ev3)
 
 
 def is_sign_in_n_rois(sign, list_rois, n):
