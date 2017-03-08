@@ -353,7 +353,7 @@ def _prepare_activation_maps(maps, x1, y1, x2, y2, size_factor):
 
 
 def _crop_activation_maps(maps, size_factor, x1, x2, y1, y2):
-    region = RegionOfInterest(x1, y1, x2, y2, None)
+    region = RegionOfInterest(x1, y1, x2, y2, -1)
     region = __scale_roi(maps[0][0], region, size_factor)
     cropped_maps = maps[:, :, int(region.y1):int(region.y2), int(region.x1):int(region.x2)]
     return cropped_maps
