@@ -61,7 +61,7 @@ class ConsoleHandler(RoiResultHandler):
     def __init__(self):
         self.fps = []
 
-    def handle_result(self, index, image_timestamp, result_timestamp, rois):
+    def handle_result(self, index, image_timestamp, result_timestamp, rois, possible_rois, image):
         """
         Prints all rois t the console
         :param rois: The rois found
@@ -70,6 +70,8 @@ class ConsoleHandler(RoiResultHandler):
         :type image_timestamp: float
         :type result_timestamp: float
         :type rois: list[sign_detection.model.PossibleROI.PossibleROI]
+        :type possible_rois: list[sign_detection.model.PossibleROI.PossibleROI]
+        :type image: numpy.ndarray
         """
         global num_workers
         current_fps = 1.0 / (result_timestamp - image_timestamp)
