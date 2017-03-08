@@ -13,7 +13,8 @@ import sign_detection.EV3.EV3 as ev3
 
 
 resultion=(300, 200)
-queue_size = 3
+queue_size = 4
+count_rois = 3
 
 def test():
     global resultion
@@ -60,10 +61,10 @@ def test():
                 if len(last_rois) > queue_size:
                     last_rois = last_rois[:queue_size]
 
-                if is_sign_in_all_rois(1, last_rois):
+                if is_sign_in_n_rois(1, last_rois, count_rois):
                     movement.move(30, 0, my_e_v3)
 
-                if is_sign_in_all_rois(14, last_rois):
+                if is_sign_in_n_rois(14, last_rois, count_rois):
                     movement.move(0, 0, my_e_v3)
 
                 end = time()
@@ -74,6 +75,22 @@ def test():
             # clean up
             cv2.destroyAllWindows()
             cv2.VideoCapture(0).release()
+
+
+def is_sign_in_n_rois(sign, list_rois, n):
+    """
+    :type list_rois: list[list[sign_detection.model.RegionOfInterest.RegionOfInterest]]
+    :type n: int
+    :param sign:
+    :param list_rois:
+    :return:
+    :returns: bool
+    """
+    count = 0
+    for rois in list_rois:
+        if is_sign_in_rois(sign, rois):
+            count += 1
+    return count > n
 
 
 def is_sign_in_all_rois(sign, list_rois):
