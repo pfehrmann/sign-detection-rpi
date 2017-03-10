@@ -8,7 +8,7 @@ layer {
   python_param {
     module: 'sign_detection.GTSDB.BoundingBoxRegression.input_layer_activation_full'
     layer: 'InputLayerActivationFull'
-    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "/home/leifb/Development/Data/GTSDB"}'
+    param_str: '{"file_input_net": "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt", "file_input_weights": "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel", "location_gt": "E:/development/GTSDB/FullIJCNN2013"}'
   }
 }
 layer {
@@ -17,7 +17,7 @@ layer {
     bottom: "input_data"
     top: "conv"
     convolution_param {
-      num_output: 64
+      num_output: 32
       kernel_size: 7
       stride: 1
       pad: 4
@@ -37,8 +37,8 @@ layer {
     bottom: "conv"
     top: "spp"
     spp_param {
-        pool: MAX
-        pyramid_height: 2
+        pool: AVE
+        pyramid_height: 3
     }
 }
 layer {
@@ -84,6 +84,19 @@ layer {
   name: "l_ip4"
   type: "InnerProduct"
   bottom: "ip3"
+  top: "ip4"
+  inner_product_param {
+    num_output: 2048
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "l_ip5"
+  type: "InnerProduct"
+  bottom: "ip4"
   top: "out"
   inner_product_param {
     num_output: 4
