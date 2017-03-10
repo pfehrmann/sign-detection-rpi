@@ -155,3 +155,4 @@ class RoiResultHandler(object):
         :type image: numpy.ndarray
         """
         raise NotImplementedError()
+
