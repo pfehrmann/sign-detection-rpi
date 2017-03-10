@@ -1,5 +1,7 @@
 import caffe
 
+from sign_detection.tools.dataset_augemntation import create_directory
+
 
 def train(solver_name="solver.prototxt", gpu=False):
     if gpu:
@@ -8,6 +10,7 @@ def train(solver_name="solver.prototxt", gpu=False):
     else:
         caffe.set_mode_cpu()
 
+    create_directory("data/snapshot/bla")
     # Create solver
     solver = caffe.get_solver(solver_name)
 

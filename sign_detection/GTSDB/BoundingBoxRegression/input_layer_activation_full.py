@@ -54,14 +54,14 @@ class InputLayerActivationFull(InputLayer):
 
         # Calculate activation
         activation = self.calculate_activation(img_raw)
-        factor_x = img_raw.shape[1] / activation.shape[3]
-        factor_y = img_raw.shape[0] / activation.shape[2]
+        factor_x = activation.shape[3] / float(img_raw.shape[1])
+        factor_y = activation.shape[2] / float(img_raw.shape[0])
         modified_roi = roi.clone().scale(factor_x, factor_y).disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
-        image_excerpt = activation[:, :, modified_roi.y1:modified_roi.y2, modified_roi.x1:modified_roi.x2]
+        image_excerpt = activation[:, :, int(modified_roi.y1):int(modified_roi.y2), int(modified_roi.x1):int(modified_roi.x2)]
 
         # Create loss vector
-        d1 = (modified_roi.p1 - roi.p1).as_array
-        d2 = (modified_roi.p2 - roi.p2).as_array
+        d1 = (modified_roi.p1 - roi.clone().scale(factor_x, factor_y).p1).as_array
+        d2 = (modified_roi.p2 - roi.clone().scale(factor_x, factor_y).p2).as_array
         v = d1 + d2
 
         if False:
