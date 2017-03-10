@@ -146,6 +146,13 @@ class RegionOfInterest(object):
         self.y1 -= dy
         self.y2 += dy
 
+    def scale(self, factor_x, factor_y):
+        self.x1 *= factor_x
+        self.x2 *= factor_x
+        self.y1 *= factor_y
+        self.y2 *= factor_y
+        return self
+
     def area(self):
         return self.width * self.height
 
