@@ -40,7 +40,7 @@ class PossibleROI(RegionOfInterest):
 def scaled_roi(roi, factor_x, factor_y, probability=0):
     return PossibleROI(
         roi.x1 * factor_x,
-        roi.x2 * factor_x,
         roi.y1 * factor_y,
+        roi.x2 * factor_x,
         roi.y2 * factor_y,
         roi.sign, probability, factor_x, factor_y)
