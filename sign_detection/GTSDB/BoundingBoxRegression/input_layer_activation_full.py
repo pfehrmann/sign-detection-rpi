@@ -56,7 +56,7 @@ class InputLayerActivationFull(InputLayer):
         activation, roi = self.images[self.image_current]
 
         # Calculate activation
-        mod_roi = roi.clone().disturb().ensure_bounds(max_x=len(activation[3]), max_y=len(activation[2]))
+        mod_roi = roi.clone().disturb().ensure_bounds(max_x=activation.shape[3], max_y=activation.shape[2])
         image_excerpt = activation[:, :, int(mod_roi.y1):int(mod_roi.y2), int(mod_roi.x1):int(mod_roi.x2)]
 
         # Create loss vector
@@ -76,7 +76,7 @@ class InputLayerActivationFull(InputLayer):
         return self.input_detector.get_activation(img)
 
     def load_images(self):
-        image_info_list = bl.get_images_and_regions(self.location_gt)
+        image_info_list = bl.get_images_and_regions(self.location_gt)[:5]
         print 'Loading {0} images and calculating activation maps for each ROI.'.format(len(image_info_list))
 
         self.images = [self.calculate_activation_and_scale_roi(load_image(img.path), region.add_padding(11))
