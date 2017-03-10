@@ -6,10 +6,15 @@ import cv2
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 import sign_detection.tools.batchloader as bl
 from sign_detection.GTSDB.BoundingBoxRegression.input_layer import InputLayer
+from sign_detection.model.PossibleROI import scaled_roi
+
+
+def load_image(path):
+    img_raw = caffe.io.load_image(path)
+    return cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB)
 
 
 class InputLayerActivationFull(InputLayer):
-
     @property
     def default_shape_label(self):
         return [1, 4]
@@ -48,26 +53,21 @@ class InputLayerActivationFull(InputLayer):
             shuffle(self.images)
 
         # Get net image
-        path, roi = self.images[self.image_current]
-        img_raw = caffe.io.load_image(path)
-        img_raw = cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB)
+        activation, roi = self.images[self.image_current]
 
         # Calculate activation
-        activation = self.calculate_activation(img_raw)
-        factor_x = activation.shape[3] / float(img_raw.shape[1])
-        factor_y = activation.shape[2] / float(img_raw.shape[0])
-        modified_roi = roi.clone().scale(factor_x, factor_y).disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
-        image_excerpt = activation[:, :, int(modified_roi.y1):int(modified_roi.y2), int(modified_roi.x1):int(modified_roi.x2)]
+        mod_roi = roi.clone().disturb().ensure_bounds(max_x=len(activation[3]), max_y=len(activation[2]))
+        image_excerpt = activation[:, :, int(mod_roi.y1):int(mod_roi.y2), int(mod_roi.x1):int(mod_roi.x2)]
 
         # Create loss vector
-        d1 = (modified_roi.p1 - roi.clone().scale(factor_x, factor_y).p1).as_array
-        d2 = (modified_roi.p2 - roi.clone().scale(factor_x, factor_y).p2).as_array
+        d1 = (mod_roi.unscaled.p1 - roi.unscaled.p1).as_array
+        d2 = (mod_roi.unscaled.p2 - roi.unscaled.p2).as_array
         v = d1 + d2
 
         if False:
             print 'DATA INFO:'
             print 'ORI ROI: %s' % str(roi)
-            print 'MOD ROI: %s' % str(modified_roi)
+            print 'MOD ROI: %s' % str(mod_roi)
             print 'COR VEC: %s' % str(v)
 
         return image_excerpt, v
@@ -77,13 +77,22 @@ class InputLayerActivationFull(InputLayer):
 
     def load_images(self):
         image_info_list = bl.get_images_and_regions(self.location_gt)
-        self.images = [(img.path, region.add_padding(11))
+        print 'Loading {0} images and calculating activation maps for each ROI.'.format(len(image_info_list))
+
+        self.images = [self.calculate_activation_and_scale_roi(load_image(img.path), region.add_padding(11))
                        for img in image_info_list for region in img.region_of_interests]
         shuffle(self.images)
+
         self.image_max = len(self.images)
         if self.image_max < 1:
             raise Exception('No images for training found.')
-        print "Got {0} Boxes.".format(self.image_max)
+        print "Got {0} ROIs.".format(self.image_max)
+
+    def calculate_activation_and_scale_roi(self, img, roi):
+        activation = self.calculate_activation(img)
+        factor_x = activation.shape[3] / float(img.shape[1])
+        factor_y = activation.shape[2] / float(img.shape[0])
+        return activation, scaled_roi(roi, factor_x, factor_y, probability=1)
 
     def load_input_detector(self):
         net = un.load_net(self.file_input_net, self.file_input_weights)
