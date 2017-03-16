@@ -4,6 +4,7 @@ import sign_detection.EV3.movement as movement
 import sign_detection.EV3.images as images
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 from sign_detection.GTSDB.multi_processor_detection import RoiResultHandler
+import time
 
 
 class ConsoleHandler(RoiResultHandler):
@@ -11,9 +12,12 @@ class ConsoleHandler(RoiResultHandler):
     :type fps: list[float]
     """
 
-    def __init__(self, num_workers):
+    def __init__(self, num_workers, num_timestamps=1000):
+        self.num_timestamps = num_timestamps
         self.num_workers = num_workers
-        self.fps = []
+        self.theoretical_fps_list = []
+        self.timestamps = [time.time()]
+        self.num_image = 0
 
     def handle_result(self, index, image_timestamp, result_timestamp, rois, possible_rois, image):
         """
@@ -27,14 +31,24 @@ class ConsoleHandler(RoiResultHandler):
         :type possible_rois: list[sign_detection.model.PossibleROI.PossibleROI]
         :type image: numpy.ndarray
         """
-        current_fps = 1.0 / (result_timestamp - image_timestamp)
-        self.fps.insert(0, current_fps)
-        self.fps = self.fps[:self.num_workers]
+        self.timestamps.insert(0, time.time())
+        self.timestamps = self.timestamps[:self.num_timestamps]
 
-        sum_fps = 0
-        for fps in self.fps:
-            sum_fps += fps
-        print "FPS: " + str(sum_fps)
+        real_fps = 1 / ((self.timestamps[0] - self.timestamps[-1]) / len(self.timestamps))
+
+        theoretical_fps = 1.0 / (result_timestamp - image_timestamp)
+        self.theoretical_fps_list.insert(0, theoretical_fps)
+        self.theoretical_fps_list = self.theoretical_fps_list[:self.num_workers]
+
+        sum_theoretical_fps = 0
+        for fps in self.theoretical_fps_list:
+            sum_theoretical_fps += fps
+
+        self.num_image += 1
+
+        print str(self.num_image) + ", " + str(time.time()) + ": Real FPS: " + str(real_fps) \
+              + ", Theoretical FPS: " + str(sum_theoretical_fps) + " Current FPS: " + \
+              str(1.0 / (result_timestamp - image_timestamp))
 
         for roi in rois:
             print roi.sign
@@ -118,7 +132,7 @@ class EV3Handler(RoiResultHandler):
             images.show_image("../prjs/Signs/SIGN_SPEED_30.rgf", self.ev3)
 
         if is_sign_in_n_rois(13, self.last_rois, self.min_frame_count):
-            movement.move(3, 0, self.ev3)
+            movement.move(0, 0, self.ev3)
             images.show_image("../prjs/Signs/SIGN_GIVE_WAY.rgf", self.ev3)
 
         if is_sign_in_n_rois(14, self.last_rois, self.min_frame_count):
