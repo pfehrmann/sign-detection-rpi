@@ -131,20 +131,50 @@ class Detector(DetectorBase):
         cv2.imwrite("result.png", unmodified * 255.0)
 
     def filter_rois(self, rois):
-        all_regions = rois[:]
-        result = []
-        for roi_tuple in rois:
-            roi = roi_tuple[0]
-            keep = True
-            for other, activation_maps in all_regions:
-                if roi is not other and roi.area < other.area and roi.get_overlap(other) > self.max_overlap:
-                    keep = False
-                    break
-            if keep:
-                result.append(roi_tuple)
-            else:
-                all_regions.remove(roi_tuple)
-        return result
+        all_regions = [(roi, maps, False) for roi, maps in rois[:]]
+
+        count = 0
+        merged = True
+        while merged and count < 3 and len(all_regions) > 1:
+            merged_rois = []
+            merged_rois_indices = np.zeros((len(all_regions), len(all_regions)))
+            count += 1
+            merged = False
+            for i in range(len(all_regions)):
+                roi_tuple = all_regions[i]
+                roi = roi_tuple[0]  # type: RegionOfInterest
+
+                for j in range(len(all_regions)):
+                    if i == j or merged_rois_indices[i, j] != 0:
+                        continue
+                    other_tuple = all_regions[j]
+                    other = other_tuple[0]
+                    if roi is not other and roi.get_overlap(other) > self.max_overlap:
+                        new_roi = self.merge(roi, other)
+                        merged_rois.append((new_roi, roi_tuple[1], False))
+                        all_regions[i] = (roi_tuple[0], roi_tuple[1], True)
+                        all_regions[j] = (other_tuple[0], other_tuple[1], True)
+                        merged_rois_indices[i, j] = 1
+                        merged_rois_indices[j, i] = 1
+                        merged = True
+
+            if merged:
+                all_regions = [x for x in all_regions if not x[2]]
+                all_regions.extend(merged_rois)
+
+        return all_regions
+        # for roi_tuple in rois:
+        #    roi = roi_tuple[0]
+        #    keep = True
+        #    for other, activation_maps in all_regions:
+        #        if roi is not other and roi.area < other.area and roi.get_overlap(other) > self.max_overlap:
+        #            keep = False
+        #            break
+        #    if keep:
+        #        result.append(roi_tuple)
+        #    else:
+        #        all_regions.remove(roi_tuple)
+        # return result
 
     def get_activation(self, image):
         # Transpose to fit caffes needs
@@ -310,6 +340,13 @@ class Detector(DetectorBase):
 
             roi.probability = possibility
             roi.sign = class_index
+
+    @staticmethod
+    def merge(roi, other):
+        return RegionOfInterest(min(roi.x1, other.x1),
+                                min(roi.y1, other.y1),
+                                max(roi.x2, other.x2),
+                                max(roi.y2, other.y2), -1)
 
 
 def preprocess_image(image):
