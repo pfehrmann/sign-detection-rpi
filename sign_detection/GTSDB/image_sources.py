@@ -40,11 +40,11 @@ class CV2CameraImageSource(ImageSource):
 
 
 class CV2VideoImageSource(ImageSource):
-    def __init__(self, rotate_angle=0, saturation_factor=3):
+    def __init__(self, rotate_angle=0, saturation_factor=3, image_source="E:/2017-03-05 23.10.31.357936/2017-03-05 23.11.32.031385.h264"):
         # capture from camera at location 0
         self.saturation_factor = saturation_factor
         self.rotate_angle = rotate_angle
-        self.cap = cv2.VideoCapture("E:/2017-03-05 23.10.31.357936/2017-03-05 23.11.32.031385.h264")
+        self.cap = cv2.VideoCapture(image_source)
 
     def get_next_image(self):
         """
