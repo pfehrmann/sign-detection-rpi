@@ -9,6 +9,11 @@ class PossibleROI(RegionOfInterest):
         self._probability = probability
         self.zoom_factor = (zoom_factor_x, zoom_factor_y)
 
+        # Field for additional information. This can be used to store detection method specific information such as with
+        # which activation map this region was extracted, if a Faster R-CNN like approach is used.
+        # Only the detection method should write to this field, to avoid inconsistent usage and overwriting of values.
+        self.additional_info = {}
+
     @probability.setter
     def probability(self, value):
         self._probability = value

@@ -55,6 +55,7 @@ class Detector(DetectorBase):
         self.faster_rcnn = faster_rcnn
         self.average_value = average_value
         self.modify_average_value = modify_average_value
+        self.last_activation_maps = None
 
     def identify_regions_from_image(self, im, unmodified=None):
         """
@@ -71,7 +72,8 @@ class Detector(DetectorBase):
             im = im
 
         # collect all the regions of interest
-        overlapping_rois = self.collect_regions(im)
+        overlapping_rois, all_activation_maps = self.collect_regions(im)
+        self.last_activation_maps = all_activation_maps
 
         # remove overlapping regions
         unfiltered_rois = self.remove_overlapping_regions(overlapping_rois)
@@ -105,10 +107,13 @@ class Detector(DetectorBase):
         :returns: list[(PossibleROI, np.ndarray)]
         """
         overlapping_rois = []
+        all_activation_maps = {}
         for step in self.zoom:
             factor = 1.0 / step
             resized = cv2.resize(im, None, fx=factor, fy=factor)
             new_regions, activation_maps = self.identify_regions(resized)
+
+            all_activation_maps[step] = activation_maps
 
             for new_region in new_regions:
                 new_region.x1 *= step
@@ -118,7 +123,7 @@ class Detector(DetectorBase):
                 new_region.zoom_factor = (new_region.zoom_factor[0] * step, new_region.zoom_factor[1] * step)
                 overlapping_rois.append((new_region, activation_maps))
 
-        return overlapping_rois
+        return overlapping_rois, all_activation_maps
 
     @staticmethod
     def draw_results_to_image(rois, unfiltered_rois, unmodified):
@@ -287,7 +292,9 @@ class Detector(DetectorBase):
             area = w * h * factor_x * factor_y
             if self.area_threshold_min <= area <= self.area_threshold_max:
                 # append the found roi to the list of rois
-                rois.append(PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0, factor_x, factor_y))
+                possible_roi = PossibleROI(x * factor_x, y * factor_y, (x + w) * factor_x, (y + h) * factor_y, -1, 0, factor_x, factor_y)
+                possible_roi.additional_info["activation_map"] = filter
+                rois.append(possible_roi)
         return rois, contours
 
     def _check_rois(self, image, rois):
