@@ -16,7 +16,7 @@ class Detector(DetectorBase):
 
     def __init__(self, net, minimum=0.99, use_global_max=True, threshold_factor=0.5,
                  draw_results=False, zoom=[1, 2, 3], area_threshold_min=49, area_threshold_max=10000,
-                 activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=1,
+                 activation_layer="conv3", out_layer="softmax", display_activation=False, blur_radius=0,
                  size_factor=0.4, max_overlap=0.2, global_pooling_layer="pool1", faster_rcnn=False, average_value=30,
                  modify_average_value=False):
         """
@@ -72,12 +72,8 @@ class Detector(DetectorBase):
             im = im
 
         # collect all the regions of interest
-        overlapping_rois, all_activation_maps = self.collect_regions(im)
+        unfiltered_rois, all_activation_maps = self.collect_regions(im)
         self.last_activation_maps = all_activation_maps
-
-        # remove overlapping regions
-        unfiltered_rois = self.remove_overlapping_regions(overlapping_rois)
-        # print "Checking {} rois".format(len(unfiltered_rois))
 
         # check each roi individually
         self._check_rois(im, unfiltered_rois)
@@ -90,14 +86,41 @@ class Detector(DetectorBase):
             self.draw_results_to_image(rois, unfiltered_rois_ret, unmodified)
         return rois, unfiltered_rois_ret
 
-    def remove_overlapping_regions(self, overlapping_rois):
+    def remove_overlapping_regions(self, set_a, set_b):
         """
-        Removes overlapping regions. Takes a maximum into account.
-        :param overlapping_rois: The regions to go though
+        Check if any region of set_a and b are overlapping. Returns a list in which none are overlapping.
+        :param set_a: The regions to go trough
+        :param set_b: The regions to go trough
+        :type set_a: list[PossibleROI]
+        :type set_b: list[PossibleROI]
         :return: Returns an array of regions
+        returns: list[(PossibleROI, numpy.ndarray)]
         """
-        unfiltered_rois = self.filter_rois(overlapping_rois)
-        return unfiltered_rois
+        result = set_a[:]
+        result.extend(set_b)
+        if self.max_overlap >= 1:
+            return result
+
+        if len(set_a) > len(set_b):
+            small_set = set_a
+            large_set = set_b
+        else:
+            small_set = set_b
+            large_set = set_a
+
+        for large in large_set:
+            for small in small_set:
+                if small == large:
+                    continue
+                if small.get_overlap(large) > self.max_overlap:
+                    if small.area() < large.area:
+                        small_set.remove(small)
+                        result.remove(small)
+                    else:
+                        result.remove(large)
+                    break
+        large_set.extend(small_set)
+        return large_set
 
     def collect_regions(self, im):
         """
@@ -168,18 +191,6 @@ class Detector(DetectorBase):
                 all_regions.extend(merged_rois)
 
         return all_regions
-        # for roi_tuple in rois:
-        #    roi = roi_tuple[0]
-        #    keep = True
-        #    for other, activation_maps in all_regions:
-        #        if roi is not other and roi.area < other.area and roi.get_overlap(other) > self.max_overlap:
-        #            keep = False
-        #            break
-        #    if keep:
-        #        result.append(roi_tuple)
-        #    else:
-        #        all_regions.remove(roi_tuple)
-        # return result
 
     def get_activation(self, image):
         # Transpose to fit caffes needs
@@ -239,10 +250,10 @@ class Detector(DetectorBase):
 
         for filter_index in range(len(activation[0])):
             # analyze image
-            filter = activation[0][filter_index]
-            regions, contours = self.__get_regions_from_filter(factor_x, factor_y, filter, global_max)
+            activation_map = activation[0][filter_index]
+            regions, contours = self.__get_regions_from_filter(factor_x, factor_y, activation_map, global_max)
 
-            rois.extend(regions)
+            rois = self.remove_overlapping_regions(rois, regions)
 
         # reset the shape
         self.net.blobs['data'].reshape(original_shape[0], original_shape[1], original_shape[2], original_shape[3])
@@ -271,10 +282,10 @@ class Detector(DetectorBase):
             threshold_value = max_value * self.threshold_factor
 
         # apply threshold
-        ret, thresh = cv2.threshold(filter, threshold_value, 0, 3)
+        ret, thresh = cv2.threshold(np.uint8(filter), threshold_value, 0, cv2.THRESH_TOZERO)
 
         # blur the image to produce better results
-        if self.blur_radius > 1:
+        if self.blur_radius > 0:
             thresh = cv2.blur(thresh, (self.blur_radius, self.blur_radius))
 
         # extract the contours
@@ -492,7 +503,7 @@ def load_image(image_path, factor=255.0 * 0.3):
 def identify_regions_from_image_path(model, weights, image_path, gpu=True, minimum=0.99, factor=255.0 * 0.3,
                                      use_global_max=True, threshold_factor=0.5, draw_results=False, zoom=[1, 2, 3],
                                      area_threshold_min=49, area_thrshold_max=10000, activation_layer="conv3",
-                                     out_layer="softmax", display_activation=False, blur_radius=1, faster_rcnn=False,
+                                     out_layer="softmax", display_activation=False, blur_radius=0, faster_rcnn=False,
                                      size_factor=0.4):
     """
     Load and process a net and image
@@ -535,16 +546,16 @@ def identify_regions_from_image_path(model, weights, image_path, gpu=True, minim
 
 # parse_arguments()
 if __name__ == "__main__":
-    regions, unfiltered = identify_regions_from_image_path(
+    _regions, _unfiltered = identify_regions_from_image_path(
         "C:/Users/Philipp/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/deploy.prototxt",
         "C:/Users/Philipp/PycharmProjects/sign-detection-playground/sign_detection/GTSDB/ActivationMapBoundingBoxes/mini_net/weights.caffemodel",
         "E:/development/GTSDB/FullIJCNN2013/00710.ppm", minimum=0.9999, factor=255.0 * 0.5, use_global_max=False,
         threshold_factor=0.80, draw_results=True, zoom=[0.5, 1, 2], area_threshold_min=1000, area_thrshold_max=50000,
-        activation_layer="activation", display_activation=False, gpu=True, blur_radius=1, faster_rcnn=True,
+        activation_layer="activation", display_activation=False, gpu=True, blur_radius=0, faster_rcnn=True,
         size_factor=1)
 
-    for roi in regions:
-        print get_name_from_category(roi.sign) + " (" + str(roi.probability) + ") @({},{}), ({},{})".format(roi.x1,
-                                                                                                            roi.y1,
-                                                                                                            roi.x2,
-                                                                                                            roi.y2)
+    for _roi in _regions:
+        print get_name_from_category(_roi.sign) + " (" + str(_roi.probability) + ") @({},{}), ({},{})".format(_roi.x1,
+                                                                                                              _roi.y1,
+                                                                                                              _roi.x2,
+                                                                                                              _roi.y2)
