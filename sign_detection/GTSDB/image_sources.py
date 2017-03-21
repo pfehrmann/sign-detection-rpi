@@ -67,12 +67,12 @@ class CV2VideoImageSource(ImageSource):
 
 
 class CV2VideoImageSourceRealTime(ImageSource):
-    def __init__(self, rotate_angle=0, saturation_factor=1, frame_rate=25.0):
+    def __init__(self, rotate_angle=0, saturation_factor=1, frame_rate=25.0, image_source="E:/2017-03-05 23.10.31.357936/2017-03-05 23.11.32.031385.h264"):
         # capture from camera at location 0
         self.frame_rate = frame_rate
         self.saturation_factor = saturation_factor
         self.rotate_angle = rotate_angle
-        self.cap = cv2.VideoCapture("E:/2017-03-05 23.10.31.357936/2017-03-05 23.13.32.099571.h264")
+        self.cap = cv2.VideoCapture(image_source)
         self.image = None
         import thread
         thread.start_new_thread(self._worker, ())
