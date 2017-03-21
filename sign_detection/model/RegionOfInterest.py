@@ -117,18 +117,33 @@ class RegionOfInterest(object):
 
     def intersection_over_union(self, box_b):
         # determine the (x, y)-coordinates of the intersection rectangle
-        xA = max(self.x1, box_b.x1)
-        yA = max(self.y1, box_b.y1)
-        xB = min(self.x2, box_b.x2)
-        yB = min(self.y2, box_b.y2)
+        s_x1 = self.x1
+        s_x2 = self.x2
+        s_y1 = self.y1
+        s_y2 = self.y2
+
+        o_x1 = box_b.x1
+        o_x2 = box_b.x2
+        o_y1 = box_b.y1
+        o_y2 = box_b.y2
+
+        if s_x2 < o_x1: return 0  # this box is left the other
+        if s_x1 > o_x2: return 0  # this box is right the other
+        if s_y2 < o_y1: return 0  # this box is above the other
+        if s_y1 > o_y2: return 0  # this box is below the other
+
+        xA = max(s_x1, o_x1)
+        yA = max(s_y1, o_y1)
+        xB = min(s_x2, o_x2)
+        yB = min(s_y2, o_y2)
 
         # compute the area of intersection rectangle
         interArea = (xB - xA + 1) * (yB - yA + 1)
 
         # compute the area of both the prediction and ground-truth
         # rectangles
-        boxAArea = (self.x2 - self.x1 + 1) * (self.y2 - self.y1 + 1)
-        boxBArea = (box_b.x2 - box_b.x1 + 1) * (box_b.y2 - box_b.y1 + 1)
+        boxAArea = (s_x2 - s_x1 + 1) * (s_y2 - s_y1 + 1)
+        boxBArea = (o_x2 - o_x1 + 1) * (o_y2 - o_y1 + 1)
 
         # compute the intersection over union by taking the intersection
         # area and dividing it by the sum of prediction + ground-truth
