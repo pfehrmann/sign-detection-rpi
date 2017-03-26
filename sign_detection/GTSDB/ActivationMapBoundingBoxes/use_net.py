@@ -361,10 +361,21 @@ class Detector(DetectorBase):
 
     @staticmethod
     def merge(roi, other):
-        return RegionOfInterest(min(roi.x1, other.x1),
-                                min(roi.y1, other.y1),
-                                max(roi.x2, other.x2),
-                                max(roi.y2, other.y2), -1)
+        """
+        :type roi: PossibleROI
+        :type other: PossibleROI
+        :param roi:
+        :param other:
+        :return:
+        """
+        return PossibleROI(min(roi.x1, other.x1),
+                           min(roi.y1, other.y1),
+                           max(roi.x2, other.x2),
+                           max(roi.y2, other.y2),
+                           roi.sign,
+                           roi.probability,
+                           roi.zoom_factor[0],
+                           roi.zoom_factor[1])
 
 
 def preprocess_image(image):
