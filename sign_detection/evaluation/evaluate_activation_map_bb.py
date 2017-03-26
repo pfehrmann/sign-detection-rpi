@@ -22,7 +22,7 @@ net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/" + path + "/deploy.proto
 detector = un.Detector(net,
                        minimum=0.99999,
                        use_global_max=False,
-                       threshold_factor=0.4,
+                       threshold_factor=0.75,
                        draw_results=False,
                        zoom=[1],
                        area_threshold_min=400,
@@ -32,13 +32,13 @@ detector = un.Detector(net,
                        display_activation=False,
                        blur_radius=0,
                        size_factor=0.1,
-                       max_overlap=0.5,
+                       max_overlap=1,
                        faster_rcnn=True,
                        modify_average_value=True,
                        average_value=70)
 
 # get the image for the net
-image = Image(path="E:/development/GTSDB/FullIJCNN2013/00028.ppm")
+image = Image(path="C:/development/FullIJCNN2013/FullIJCNN2013/00028.ppm")
 image_raw = load_image(image)*255.0
 
 regions, possible_regions = detector.identify_regions_from_image(image_raw)
@@ -105,12 +105,15 @@ count_plots = len(all_activation_maps) + 1
 width = int(count_plots ** 0.5) + 1
 height = count_plots / width + 1
 for map, roi_list, possible_roi_list, factor in all_activation_maps:
-#    plt.subplot(width, height, plot), plt.imshow(map)
-    plot += 1
+    # plt.subplot(width, height, plot), plt.imshow(map)  # Create a subplot of all maps
+    # plot += 1
+    plt.imshow(map)  # Create s single plot for each map
+    plt.figure()
 image_raw /= 255.0
 un.draw_regions(possible_regions, image_raw, (0, 1, 0))
 un.draw_regions(regions, image_raw, (0, 0, 1), print_class=True)
-#plt.subplot(width, height, plot), plt.imshow(cv2.cvtColor(image_raw, cv2.COLOR_BGR2RGB))
+# plt.subplot(width, height, plot), plt.imshow(cv2.cvtColor(image_raw, cv2.COLOR_BGR2RGB))
+plt.imshow(cv2.cvtColor(image_raw, cv2.COLOR_BGR2RGB))
 cv2.imshow("", image_raw)
-#plt.show()
+plt.show()
 cv2.waitKey(1000000)
