@@ -115,7 +115,28 @@ class RegionOfInterest(object):
         """
         return self.intersection_over_union(other)
 
+    def is_overlapping(self, region):
+        """
+        Check if this bounding box overlaps with the given region
+        :param region: The region to check overlapping with
+        :return: Returns True, if both are overlapping. Returns False otherwise.
+        :returns: bool
+        """
+        if self.x2 < region.x1:
+            return False  # this box is left the other
+        if self.x1 > region.x2:
+            return False  # this box is right the other
+        if self.y2 < region.y1:
+            return False  # this box is above the other
+        if self.y1 > region.y2:
+            return False  # this box is below the other
+        return True
+
     def intersection_over_union(self, box_b):
+        # if the boxes are not overlapping, then return 0
+        if not self.is_overlapping(box_b):
+            return 0
+
         # determine the (x, y)-coordinates of the intersection rectangle
         s_x1 = self.x1
         s_x2 = self.x2
@@ -126,11 +147,6 @@ class RegionOfInterest(object):
         o_x2 = box_b.x2
         o_y1 = box_b.y1
         o_y2 = box_b.y2
-
-        if s_x2 < o_x1: return 0  # this box is left the other
-        if s_x1 > o_x2: return 0  # this box is right the other
-        if s_y2 < o_y1: return 0  # this box is above the other
-        if s_y1 > o_y2: return 0  # this box is below the other
 
         xA = max(s_x1, o_x1)
         yA = max(s_y1, o_y1)
