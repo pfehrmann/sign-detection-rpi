@@ -177,7 +177,7 @@ class Detector(DetectorBase):
                         continue
                     other_tuple = all_regions[j]
                     other = other_tuple[0]
-                    if roi is not other and roi.get_overlap(other) > self.max_overlap:
+                    if roi is not other and roi.intersection_over_union(other) > self.max_overlap:
                         new_roi = self.merge(roi, other)
                         merged_rois.append((new_roi, roi_tuple[1], False))
                         all_regions[i] = (roi_tuple[0], roi_tuple[1], True)
