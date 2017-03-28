@@ -192,7 +192,7 @@ class Detector(DetectorBase):
 
         return all_regions
 
-    def get_activation(self, image):
+    def calculate_activation(self, image):
         # Transpose to fit caffes needs
         caffe_in = image.transpose((2, 0, 1))
 
