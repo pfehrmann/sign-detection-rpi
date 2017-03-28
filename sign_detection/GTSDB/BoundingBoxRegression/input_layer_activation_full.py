@@ -97,11 +97,20 @@ def parse_arg(params, arg, arg_type):
     return val
 
 
+dict = {}
 def load_image(path):
+    global dict
+    if dict.has_key(path):
+        # convert back to 32 bit to ensure compatability with caffe # todo check if this is needed
+        return numpy.float32(dict[path])
     img_raw = caffe.io.load_image(path)
 
     # as the net is trained with digits, images have to range between 0 and 255
-    return cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB) * 255.0
+    img_raw = cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB) * 255.0
+
+    # store in dict as a cache. Convert to 8 bit to save space
+    dict[path] = numpy.int8(img_raw)
+    return img_raw
 
 
 def loss_vector(mod_roi, gt_roi):
