@@ -211,7 +211,7 @@ class Detector(DetectorBase):
         # reset the shape
         self.net.blobs['data'].reshape(*original_shape)
 
-        return out[self.activation_layer][:]
+        return np.copy(out[self.activation_layer])
 
     def identify_regions(self, image):
         """

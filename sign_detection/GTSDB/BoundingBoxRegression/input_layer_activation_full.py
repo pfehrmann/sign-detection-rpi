@@ -63,12 +63,16 @@ class InputLayerActivationFull(InputLayer):
 
     def load_activations(self):
         # Get image info
-        image_info_list = bl.get_images_and_regions(self.location_gt)
+        image_info_list = bl.get_images_and_regions(self.location_gt)[:20]
         print 'Got {0} images to work with. Loading activation maps.'.format(len(image_info_list))
 
         # Read or calculate activation maps for each roi
-        self.activations = [self.get_activation_and_scale_roi(img, region.add_padding(11))
-                            for img in image_info_list for region in img.region_of_interests]
+        self.activations = []
+        for img in image_info_list:
+            for region in img.region_of_interests:
+                activation = self.get_activation_and_scale_roi(img, region.add_padding(11))
+                activation = (activation[0], activation[1])
+                self.activations.append(activation)
         shuffle(self.activations)
 
         # Check, if images are there
@@ -96,7 +100,9 @@ def parse_arg(params, arg, arg_type):
 
 def load_image(path):
     img_raw = caffe.io.load_image(path)
-    return cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB)
+
+    # as the net is trained with digits, images have to range between 0 and 255
+    return cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB) * 255.0
 
 
 def loss_vector(mod_roi, gt_roi):
