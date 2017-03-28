@@ -70,7 +70,7 @@ class InputLayerActivation(InputLayer):
         return self.calculate_activation(image_excerpt), v
 
     def calculate_activation(self, img):
-        return self.input_detector.get_activation(img)
+        return self.input_detector.calculate_activation(img)
 
     def load_images(self):
         image_info_list = bl.get_images_and_regions(self.location_gt)

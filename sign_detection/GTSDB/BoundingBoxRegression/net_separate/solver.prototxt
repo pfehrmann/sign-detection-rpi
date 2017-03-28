@@ -1,7 +1,7 @@
 net: "net_separate/train.prototxt"
 test_iter: 800
 test_interval: 100
-base_lr: 0.0001
+base_lr: 0.00001
 display: 1
 max_iter: 8000
 iter_size: 20
