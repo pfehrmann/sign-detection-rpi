@@ -33,7 +33,9 @@ class InputLayerActivationFull(InputLayer):
     def apply_arguments(self, args):
         file_input_net = parse_arg(args, 'file_input_net', str)
         file_input_weights = parse_arg(args, 'file_input_weights', str)
-        self.activation_cache = ActivationCache("data/activation/", file_input_net, file_input_weights, load_image)
+        location_cache = parse_arg(args, 'location_activation_cache', str)
+        self.activation_cache = ActivationCache(location_cache, file_input_net, file_input_weights, load_image,
+                                                ignore_persistence=True)
         self.location_gt = parse_arg(args, 'location_gt', str)
 
         # Load data
@@ -61,7 +63,7 @@ class InputLayerActivationFull(InputLayer):
 
     def load_activations(self):
         # Get image info
-        image_info_list = bl.get_images_and_regions(self.location_gt)[:400]
+        image_info_list = bl.get_images_and_regions(self.location_gt)
         print 'Got {0} images to work with. Loading activation maps.'.format(len(image_info_list))
 
         # Read or calculate activation maps for each roi

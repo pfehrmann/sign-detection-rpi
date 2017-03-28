@@ -4,7 +4,8 @@ import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 
 
 class ActivationCache:
-    def __init__(self, path_cache, file_input_net, file_input_weights, load_image, detector_config=None):
+    def __init__(self, path_cache, file_input_net, file_input_weights, load_image, ignore_persistence=False,
+                 detector_config=None):
         """Creates a new instance of a activation cache.
         :param path_cache The file path where the cached activation maps are stored.
         :param file_input_net the location of the net that calculates the activation maps.
@@ -20,35 +21,51 @@ class ActivationCache:
                                 "modify_average_value": True, "average_value": 30}
         if detector_config is not None:
             self.detector_config.update(detector_config)
-        self.path = path_cache
+        self.path = os.path.abspath(path_cache)
         self.can_calculate = False
         self.input_detector = None  # type: un.Detector
         self.input_net = file_input_net
         self.input_weights = file_input_weights
         self.load_image = load_image
+        self.ignore_persistence = ignore_persistence
+
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
 
     def load(self, img):
-        img_name = os.path.basename(img.path)
-        if not self.__has(img_name):
+        if self.ignore_persistence:
+            return self.__calculate(img)
+        elif self.__has(img):
+            return self.__read(img)
+        else:
             return self.__add(img)
-        data = np.load(self.path + img_name)
-        return data[0], data[1]
 
     def free_memory(self):
         self.__disable_calculating()
 
-    def __has(self, img_name):
-        return os.path.isfile(self.path + img_name)
+    def __has(self, img):
+        return os.path.isfile(self.img_path(img))
 
-    def __add(self, img):
+    def __calculate(self, img):
         if not self.can_calculate:
             self.__enable_calculating()
         img_data = self.load_image(img.path)
         activation = self.input_detector.calculate_activation(img_data)
         factors = [activation.shape[3] / float(img_data.shape[1]),
                    activation.shape[2] / float(img_data.shape[0])]
-        data = [activation, factors]
-        np.save(self.path + os.path.basename(img.path) + ".npy", data)
+        del img_data
+        return activation, factors
+
+    def __add(self, img):
+        activation, factors = self.__calculate(img)
+        np.savez_compressed(self.img_path(img), activation=activation, factors=factors)
+        return activation, factors
+
+    def __read(self, img):
+        data = np.load(self.img_path(img))
+        activation = data["activation"]
+        factors = data["factors"]
+        del data
         return activation, factors
 
     def __enable_calculating(self):
@@ -63,3 +80,6 @@ class ActivationCache:
     def __load_input_detector(self):
         net = un.load_net(self.input_net, self.input_weights)
         self.input_detector = un.Detector(net, **self.detector_config)
+
+    def img_path(self, img):
+        return os.path.join(self.path, os.path.basename(img.path) + ".npz")
