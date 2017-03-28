@@ -1,3 +1,4 @@
+import numpy
 from random import shuffle
 
 import caffe
@@ -12,6 +13,19 @@ from sign_detection.model.PossibleROI import scaled_roi
 def load_image(path):
     img_raw = caffe.io.load_image(path)
     return cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB)
+
+
+def loss_vector(mod_roi, gt_roi):
+    gt_ctr = gt_roi.center
+    mod_ctr = mod_roi.center
+    targets_dx = (gt_ctr.x - mod_ctr.x) / (mod_roi.width + 1.0)
+    targets_dy = (gt_ctr.y - mod_ctr.y) / (mod_roi.height + 1.0)
+    targets_dw = numpy.log(gt_roi.width / (mod_roi.width + 1.0))
+    targets_dh = numpy.log(gt_roi.height / (mod_roi.height + 1.0))
+
+    targets = numpy.array([targets_dx, targets_dy, targets_dw, targets_dh])
+
+    return targets
 
 
 class InputLayerActivationFull(InputLayer):
@@ -44,6 +58,7 @@ class InputLayerActivationFull(InputLayer):
         # Load data
         self.load_input_detector()
         self.load_images()
+        del self.input_detector.net
 
     def get_next_data(self):
         # Increase image counter
@@ -53,22 +68,14 @@ class InputLayerActivationFull(InputLayer):
             shuffle(self.images)
 
         # Get net image
-        activation, roi = self.images[self.image_current]
+        activation, gt_roi = self.images[self.image_current]
 
         # Calculate activation
-        mod_roi = roi.clone().disturb().ensure_bounds(max_x=activation.shape[3], max_y=activation.shape[2])
-        image_excerpt = activation[:, :, int(mod_roi.y1):int(mod_roi.y2), int(mod_roi.x1):int(mod_roi.x2)]
+        mod_roi = gt_roi.clone().disturb().clip(max_x=activation.shape[3], max_y=activation.shape[2])
+        image_excerpt = activation[:, :, mod_roi.y1:mod_roi.y2, mod_roi.x1:mod_roi.x2]
 
         # Create loss vector
-        d1 = (mod_roi.unscaled.p1 - roi.unscaled.p1).as_array
-        d2 = (mod_roi.unscaled.p2 - roi.unscaled.p2).as_array
-        v = d1 + d2
-
-        if False:
-            print 'DATA INFO:'
-            print 'ORI ROI: %s' % str(roi)
-            print 'MOD ROI: %s' % str(mod_roi)
-            print 'COR VEC: %s' % str(v)
+        v = loss_vector(mod_roi, gt_roi)
 
         return image_excerpt, v
 
@@ -76,7 +83,7 @@ class InputLayerActivationFull(InputLayer):
         return self.input_detector.get_activation(img)
 
     def load_images(self):
-        image_info_list = bl.get_images_and_regions(self.location_gt)[:5]
+        image_info_list = bl.get_images_and_regions(self.location_gt)[:100]
         print 'Loading {0} images and calculating activation maps for each ROI.'.format(len(image_info_list))
 
         self.images = [self.calculate_activation_and_scale_roi(load_image(img.path), region.add_padding(11))

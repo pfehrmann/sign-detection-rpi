@@ -213,7 +213,7 @@ class RegionOfInterest(object):
         self.__p2 += stretch_arr
         return self
 
-    def ensure_bounds(self, max_x, max_y, min_x=0, min_y=0):
+    def clip(self, max_x, max_y, min_x=0, min_y=0):
         self.x1 = max(self.x1, min_x)
         self.y1 = max(self.y1, min_y)
         self.x2 = min(self.x2, max_x)
@@ -222,10 +222,10 @@ class RegionOfInterest(object):
 
     @property
     def center(self):
-        return [a + b for a, b in zip(self.position, self.size)]
+        return from_array([self.__p1.x + self.size[0] * 0.5, self.__p1.y + self.size[1] * 0.5])
 
     def get_distance(self, roi2):
-        return [b - a for a, b in zip(self.center, roi2.center)]
+        return [b - a for a, b in zip(self.center.as_array, roi2.center.as_array)]
 
     def __str__(self):
         return '(p1:{p1}, p2:{p2}, sign:{sign:02d})'.format(p1=str(self.p1), p2=str(self.p2), sign=self.sign)

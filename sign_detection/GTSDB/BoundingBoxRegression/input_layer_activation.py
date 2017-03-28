@@ -52,7 +52,7 @@ class InputLayerActivation(InputLayer):
         img_raw = caffe.io.load_image(path)
 
         # Modify image
-        modified_roi = roi.clone().disturb().ensure_bounds(max_x=len(img_raw[0]), max_y=len(img_raw))
+        modified_roi = roi.clone().disturb().clip(max_x=len(img_raw[0]), max_y=len(img_raw))
         image_excerpt = img_raw[modified_roi.y1:modified_roi.y2, modified_roi.x1:modified_roi.x2, :]
         image_excerpt = cv2.cvtColor(image_excerpt, cv2.COLOR_BGR2RGB)
 
