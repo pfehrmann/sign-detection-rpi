@@ -74,8 +74,9 @@ class ActivationCache:
 
     def __disable_calculating(self):
         self.can_calculate = False
-        del self.input_detector.net
-        del self.input_detector
+        if self.input_detector is not None:
+            del self.input_detector.net
+            del self.input_detector
 
     def __load_input_detector(self):
         net = un.load_net(self.input_net, self.input_weights)

@@ -3,7 +3,6 @@ from random import shuffle
 
 import caffe
 import cv2
-import os
 
 import sign_detection.tools.batchloader as bl
 from sign_detection.GTSDB.BoundingBoxRegression.activation_cache import ActivationCache
@@ -40,7 +39,7 @@ class InputLayerActivationFull(InputLayer):
 
         # Load data
         self.load_activations()
-        self.activation_cache.free_memory()
+        # self.activation_cache.free_memory() # only do, if activations are calculated before
 
     def get_next_data(self):
         # Increase image counter
@@ -50,7 +49,8 @@ class InputLayerActivationFull(InputLayer):
             shuffle(self.activations)
 
         # Get net image
-        activation, gt_roi = self.activations[self.image_current]
+        img, region = self.activations[self.image_current]
+        activation, gt_roi = self.get_activation_and_scale_roi(img, region)  # region.add_padding(11)
 
         # Calculate activation
         mod_roi = gt_roi.clone().disturb().clip(max_x=activation.shape[3], max_y=activation.shape[2])
@@ -63,16 +63,14 @@ class InputLayerActivationFull(InputLayer):
 
     def load_activations(self):
         # Get image info
-        image_info_list = bl.get_images_and_regions(self.location_gt)[:20]
+        image_info_list = bl.get_images_and_regions(self.location_gt)
         print 'Got {0} images to work with. Loading activation maps.'.format(len(image_info_list))
 
         # Read or calculate activation maps for each roi
         self.activations = []
         for img in image_info_list:
             for region in img.region_of_interests:
-                activation = self.get_activation_and_scale_roi(img, region.add_padding(11))
-                activation = (activation[0], activation[1])
-                self.activations.append(activation)
+                self.activations.append((img, region))
         shuffle(self.activations)
 
         # Check, if images are there
@@ -86,7 +84,8 @@ class InputLayerActivationFull(InputLayer):
         Furthermore creates an roi that contains information, how much the activation map differs from the image."""
 
         activation, factors = self.activation_cache.load(img_info)
-        return activation, scaled_roi(roi, factors[0], factors[1], probability=1)
+        roi_scaled = scaled_roi(roi, factors[0], factors[1], probability=1)
+        return activation, roi_scaled
 
 
 def parse_arg(params, arg, arg_type):
