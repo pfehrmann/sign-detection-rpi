@@ -1,15 +1,20 @@
 net: "net_separate/train.prototxt"
 test_iter: 800
 test_interval: 100
-base_lr: 0.00001
 display: 1
 max_iter: 8000
 iter_size: 20
-lr_policy: "sigmoid"
-gamma: -0.00122149837134
-momentum: 0.25
-weight_decay: 5e-04
-stepsize: 400
+base_lr: 0.0000001
+momentum: 0.9
+weight_decay: 0.005
+# The learning rate policy
+lr_policy: "multistep"
+gamma: 0.9
+stepvalue: 100
+stepvalue: 300
+stepvalue: 700
+stepvalue: 1500
+stepvalue: 4000
 random_seed: 42
 snapshot: 300
 snapshot_prefix: "data/snapshot/"

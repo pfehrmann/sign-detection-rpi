@@ -95,8 +95,9 @@ layer {
 }
 layer {
     name: "l_loss"
-    type: "SigmoidCrossEntropyLoss"
+    type: "EuclideanLoss"
     phase: TRAIN
-    bottom: "out"
     bottom: "label"
+    bottom: "out"
+    top: 'loss'
 }
