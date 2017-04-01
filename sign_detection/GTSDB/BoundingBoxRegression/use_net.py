@@ -1,5 +1,6 @@
 import caffe
 import cv2
+import numpy as np
 
 import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
 from sign_detection.model.RegionOfInterest import RegionOfInterest
@@ -7,10 +8,11 @@ from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 def use_net():
     model = "net_separate/train.prototxt"
-    weights = "data/weights.caffemodel"
+    weights = "data/snapshot/_iter_30.caffemodel"
     net_bbr = caffe.Net(model, weights, caffe.TEST)
 
-    img = caffe.io.load_image("/home/leifb/Development/Data/GTSDB/00002.ppm")
+    img = caffe.io.load_image("E:/development/GTSDB/FullIJCNN2013/00028.ppm")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     detector = load_input_detector()
 
     data = get_activation(detector, img)
@@ -20,8 +22,7 @@ def use_net():
         print str(roi)
 
     corrections = [(bbr(net_bbr, activation), roi) for roi, activation in data]
-    corrected_regoins = [RegionOfInterest(v[0][0] + roi.x1, v[0][1] + roi.y1, v[0][2] + roi.x2, v[0][3] + roi.y2, -1)
-                         for v, roi in corrections]
+    corrected_regoins = [bbox_transform_inv(roi, v) for v, roi in corrections]
 
     print 'bbr corrections:'
     for v, roi in corrections:
@@ -47,19 +48,61 @@ def get_activation(detector, img):
 def bbr(bbr_net, activation):
     bbr_net.blobs['input_data'].reshape(*activation.shape)
     bbr_net.blobs['input_data'].data[...] = activation
-    out = bbr_net.forward(blobs=['ip3'])
-    return out['ip3']
+    out = bbr_net.forward(blobs=['ip1'])
+    return out['ip1'].copy()
 
+def bbox_transform_inv(roi, delta):
+    """
+
+    :param roi:
+    :param delta:
+    :return:
+    :type roi: sign_detection.model.PossibleROI.PossibleROI
+    """
+    roi = roi.clone()
+
+    width = roi.width + 1.0
+    height = roi.height + 1.0
+    ctr_x = roi.x1 + 0.5 * width
+    ctr_y = roi.y1 + 0.5 * height
+
+    dx = delta[0][0]
+    dy = delta[0][1]
+    dw = delta[0][2]
+    dh = delta[0][3]
+
+    pred_ctr_x = dx * width + ctr_x
+    pred_ctr_y = dy * height + ctr_y
+    pred_w = np.exp(dw) * width
+    pred_h = np.exp(dh) * height
+
+    roi.x1 = pred_ctr_x - 0.5 * pred_w
+    roi.x2 = pred_ctr_x + 0.5 * pred_w
+    roi.y1 = pred_ctr_y - 0.5 * pred_h
+    roi.y2 = pred_ctr_y + 0.5 * pred_h
+
+    return roi
 
 def load_input_detector():
     net = "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt"
     w = "../ActivationMapBoundingBoxes/mini_net/weights.caffemodel"
     net = un.load_net(net, w)
-    return un.Detector(net, minimum=0.9999, use_global_max=False, threshold_factor=0.75,
+    return un.Detector(net,
+                       minimum=0.99999,
+                       use_global_max=False,
+                       threshold_factor=0.75,
                        draw_results=False,
-                       zoom=[1], area_threshold_min=1200, area_threshold_max=50000,
-                       activation_layer="conv3",
-                       out_layer="softmax", display_activation=False, blur_radius=1, size_factor=0.5,
-                       faster_rcnn=True, modify_average_value=True, average_value=30)
+                       zoom=[1],
+                       area_threshold_min=400,
+                       area_threshold_max=50000,
+                       activation_layer="activation",
+                       out_layer="softmax",
+                       display_activation=False,
+                       blur_radius=0,
+                       size_factor=0.1,
+                       max_overlap=1,
+                       faster_rcnn=True,
+                       modify_average_value=True,
+                       average_value=70)
 
 use_net()
