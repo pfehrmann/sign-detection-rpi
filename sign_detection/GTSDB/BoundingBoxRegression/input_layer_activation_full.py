@@ -9,6 +9,10 @@ from sign_detection.GTSDB.BoundingBoxRegression.activation_cache import Activati
 from sign_detection.GTSDB.BoundingBoxRegression.input_layer import InputLayer
 from sign_detection.model.PossibleROI import scaled_roi
 
+image_cache = {}
+debug = True
+debug_show_bbr_boxes = True
+
 
 class InputLayerActivationFull(InputLayer):
     @property
@@ -56,6 +60,9 @@ class InputLayerActivationFull(InputLayer):
         mod_roi = gt_roi.clone().disturb().clip(max_x=activation.shape[3], max_y=activation.shape[2])
         image_excerpt = activation[:, :, mod_roi.y1:mod_roi.y2, mod_roi.x1:mod_roi.x2]
 
+        if debug and debug_show_bbr_boxes:
+            show_bbr_boxes(img, gt_roi, mod_roi)
+
         # Create loss vector
         v = loss_vector(mod_roi, gt_roi)
 
@@ -97,23 +104,29 @@ def parse_arg(params, arg, arg_type):
     return val
 
 
-dict = {}
 def load_image(path):
-    global dict
-    if dict.has_key(path):
-        # convert back to 32 bit to ensure compatability with caffe # todo check if this is needed
-        return numpy.float32(dict[path])
+    """
+    Load an image from either a cache or the disk.
+    The image data is converted to 8-Bit integers while caching to reduce memory usage.
+    """
+    global image_cache
+    if path in image_cache:
+        # convert back to 32 bit to ensure compatibility with caffe # todo check if this is needed
+        return image_cache[path]
+
     img_raw = caffe.io.load_image(path)
 
     # as the net is trained with digits, images have to range between 0 and 255
     img_raw = cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB) * 255.0
 
     # store in dict as a cache. Convert to 8 bit to save space
-    dict[path] = numpy.int8(img_raw)
+    image_cache[path] = img_raw
     return img_raw
 
 
 def loss_vector(mod_roi, gt_roi):
+    """Calculates a loss vector representing a difference in two rois. The vector is optimized to be used for 
+    training."""
     gt_ctr = gt_roi.center
     mod_ctr = mod_roi.center
     targets_dx = (gt_ctr.x - mod_ctr.x) / (mod_roi.width + 1.0)
@@ -124,3 +137,13 @@ def loss_vector(mod_roi, gt_roi):
     targets = numpy.array([targets_dx, targets_dy, targets_dw, targets_dh])
 
     return targets
+
+
+def show_bbr_boxes(img_info, gt_roi, mod_roi):
+    import sign_detection.GTSDB.ActivationMapBoundingBoxes.use_net as un
+    img_raw = numpy.copy(load_image(img_info.path)) / 255.0
+    un.draw_regions([gt_roi.unscaled], img_raw, color=(0, 1, 0))
+    un.draw_regions([mod_roi.unscaled], img_raw, color=(1, 0, 0))
+
+    cv2.imshow('Training Bounding Boxes', img_raw)
+    cv2.waitKey(30000)

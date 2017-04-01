@@ -14,11 +14,13 @@ class InputLayer(caffe.Layer):
     @property
     @abc.abstractproperty
     def default_shape_data(self):
+        """The shape of the data object when the net is initialized. Should be set by the implementing class."""
         return []
 
     @property
     @abc.abstractproperty
     def default_shape_label(self):
+        """The shape of the label (loss) object when the net is initialized. Should be set by the implementing class."""
         return []
 
     def __init__(self, p_object, *args, **kwargs):
@@ -39,6 +41,7 @@ class InputLayer(caffe.Layer):
 
     @abc.abstractmethod
     def apply_arguments(self, args):
+        """Allows the implementing class to access arguments from the prototxt file."""
         pass
 
     @abc.abstractmethod
@@ -49,7 +52,7 @@ class InputLayer(caffe.Layer):
         # 1. Get new data to use
         net_data, label_data = self.get_next_data()
 
-        # 2. Reshape the net and then push data into it
+        # 2. Reshape the net and push data into it
         top[0].reshape(*net_data.shape)
         top[0].data[...] = net_data
 
