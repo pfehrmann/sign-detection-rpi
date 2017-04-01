@@ -10,8 +10,8 @@ from sign_detection.GTSDB.BoundingBoxRegression.input_layer import InputLayer
 from sign_detection.model.PossibleROI import scaled_roi
 
 image_cache = {}
-debug = True
-debug_show_bbr_boxes = True
+debug = False
+debug_show_bbr_boxes = False
 
 
 class InputLayerActivationFull(InputLayer):
