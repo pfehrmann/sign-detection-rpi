@@ -59,7 +59,8 @@ class ViewHandler(RoiResultHandler):
     :type fps: list[float]
     """
 
-    def __init__(self, num_workers):
+    def __init__(self, num_workers, window_name="Detection"):
+        self.window_name = window_name
         self.num_workers = num_workers
         self.fps = []
 
@@ -88,9 +89,36 @@ class ViewHandler(RoiResultHandler):
         cv2.putText(image, "{} fps".format(sum_fps), (5, image.shape[0] - 10), cv2.FONT_HERSHEY_PLAIN, 1,
                     (255, 0, 0), 1)
 
-        cv2.imshow("Detection", image)
+        cv2.imshow(self.window_name, image)
         cv2.waitKey(1)
 
+
+class JunkRemover(RoiResultHandler):
+    def __init__(self, result_handler, junk_classes=[43]):
+        """
+
+        :param result_handler:
+        :param junk_class:
+        :type result_handler: RoiResultHandler
+        """
+        self.result_handler = result_handler
+        self.junk_classes = junk_classes
+
+    def handle_result(self, index, image_timestamp, result_timestamp, rois, possible_rois, image):
+        """
+        Prints all rois t the console
+        :param rois: The rois found
+        :return: None
+        :type index: int
+        :type image_timestamp: float
+        :type result_timestamp: float
+        :type rois: list[sign_detection.model.PossibleROI.PossibleROI]
+        :type possible_rois: list[sign_detection.model.PossibleROI.PossibleROI]
+        :type image: numpy.ndarray
+        """
+        rois_junkless = [roi for roi in rois if roi.sign not in self.junk_classes]
+        possible_rois = [roi for roi in possible_rois if roi.sign not in self.junk_classes]
+        self.result_handler.handle_result(index, image_timestamp, result_timestamp, rois_junkless, possible_rois, image)
 
 class EV3Handler(RoiResultHandler):
     """
