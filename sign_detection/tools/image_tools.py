@@ -14,8 +14,12 @@ def generate_no_sign_images(count_images, path, gtsdb_root, offset=12629):
         imgpath = path + "/" + format(i, '05d') + ".ppm"
         imsave(imgpath, images.pop()[0])
         out += imgpath + " 43\n"
+        if i % (count_images / 100) == 0:
+            print str(float(i) / float(count_images)) + "% done"
 
     print out
 
 
-generate_no_sign_images(300, "C:/development/GTSRB/Final_Test/Images", "C:/development/FullIJCNN2013/FullIJCNN2013")
+generate_no_sign_images(40000, "C:/development/GTSRB_AUGMENT/LessClasses/Training/00043",
+                        "C:/development/FullIJCNN2013/FullIJCNN2013", offset=0)
+# generate_no_sign_images(700, "C:/development/GTSRB_AUGMENT/LessClasses/Validation/00043", "C:/development/FullIJCNN2013/FullIJCNN2013", offset=0)
