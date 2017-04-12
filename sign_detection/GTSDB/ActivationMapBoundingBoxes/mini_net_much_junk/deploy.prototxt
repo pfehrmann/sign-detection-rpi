@@ -1,0 +1,136 @@
+input: "data"
+input_shape {
+  dim: 1
+  dim: 3
+  dim: 64
+  dim: 64
+}
+layer {
+  name: "Scale"
+  type: "Scale"
+  bottom: "data"
+  top: "scale"
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "scale"
+  top: "conv1"
+  convolution_param {
+    num_output: 16
+    kernel_size: 7
+    stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  convolution_param {
+    num_output: 16
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "conv2"
+  top: "conv3"
+  convolution_param {
+    num_output: 64
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "relu3"
+  type: "ReLU"
+  bottom: "conv3"
+  top: "conv3"
+}
+layer {
+  name: "activation"
+  type: "Pooling"
+  bottom: "conv3"
+  top: "activation"
+  pooling_param {
+    pool: MAX
+    kernel_size: 11
+    stride: 8
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv3"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    global_pooling: true
+  }
+}
+layer {
+  name: "ip1_1"
+  type: "InnerProduct"
+  bottom: "pool1"
+  top: "ip1"
+  inner_product_param {
+    num_output: 128
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "ip2_1"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "ip2"
+  inner_product_param {
+    num_output: 128
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "ip3_1"
+  type: "InnerProduct"
+  bottom: "ip2"
+  top: "ip3"
+  inner_product_param {
+    num_output: 44
+    weight_filler {
+      type: "gaussian"
+      std: 0.02
+    }
+  }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "ip3"
+  top: "softmax"
+}
