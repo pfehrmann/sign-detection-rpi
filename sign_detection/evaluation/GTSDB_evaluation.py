@@ -16,33 +16,44 @@ def load(image):
     return im
 
 
+def filter_junk(rois):
+    """
+    :type rois: list[PossibleROI]
+    :param rois:
+    :return:
+    """
+    junk_classes = [43]
+    filtered_rois = [roi for roi in rois if roi.sign not in junk_classes]
+    return filtered_rois
+
+
 def test(gpu=True):
     # initialize caffe
     un.setup_device(gpu=gpu)
 
     # Setup the net and transformer
-    path = "mini_net_aug_scale"
+    path = "mini_net"
     net = un.load_net("../GTSDB/ActivationMapBoundingBoxes/" + path + "/deploy.prototxt",
                       "../GTSDB/ActivationMapBoundingBoxes/" + path + "/weights.caffemodel")
 
     # setup the detector
     detector = un.Detector(net,
-                           minimum=0.9,
+                           minimum=0.999,
                            use_global_max=False,
                            threshold_factor=0.75,
                            draw_results=False,
-                           zoom=[1, 2],
+                           zoom=[0.5, 1, 2],
                            area_threshold_min=1000,
                            area_threshold_max=50000,
                            activation_layer="activation",
                            out_layer="softmax",
                            display_activation=False,
-                           blur_radius=1,
-                           size_factor=0.1,
-                           max_overlap=0.5,
+                           blur_radius=0,
+                           size_factor=0.6,
+                           max_overlap=0.8,
                            faster_rcnn=True,
                            modify_average_value=True,
-                           average_value=95)
+                           average_value=18.5)
 
     images = BatchLoader.get_images_and_regions(gtsdb_root="C:/development/FullIJCNN2013/FullIJCNN2013", min=0,
                                                 max=900, shuffle_result=False)
@@ -53,6 +64,7 @@ def test(gpu=True):
     for image in images:
         image_raw = load(image) * 255
         rois, unfiltered = detector.identify_regions_from_image(image_raw, image_raw)
+        rois = filter_junk(rois)
         correct, false_negative, false_positive = evaluate(rois, image.get_region_of_interests())
         correct_rois.extend(correct)
         false_negatives.extend(false_negative)
@@ -79,8 +91,8 @@ def test(gpu=True):
     true_labels = label_binarize(true_labels, classes=range(-1, 43))
     scores = label_binarize(scores, classes=range(-1, 43))
 
-    average_precision = [0 for x in range(44)]
-    for i in range(44):
+    average_precision = [0 for x in range(43)]
+    for i in range(43):
         average_precision[i] = average_precision_score(true_labels[:, i], scores[:, i], average='macro')
 
     average_precision_micro = average_precision_score(true_labels, scores, average="micro")
@@ -143,18 +155,25 @@ def evaluate(found_rois, expected_rois):
         for found_roi in found_rois:
             if found_roi.similar(expected_roi, 0.0):
                 correct_rois.append((found_roi, expected_roi))
+                break
+
+    duplicated_true_positives = []
+    for expected_roi in expected_rois:
+        for found_roi in found_rois:
+            if found_roi.similar(expected_roi, 0.0):
+                duplicated_true_positives.append((found_roi, expected_roi))
 
     # Find all the false negatives
     false_negative = expected_rois[:]
     for expected_roi in expected_rois:
-        for (found, expected) in correct_rois:
+        for (found, expected) in duplicated_true_positives:
             if expected == expected_roi and expected in false_negative:
                 false_negative.remove(expected)
 
     # Find all the false positives
     false_positive = found_rois[:]
     for found_roi in found_rois:
-        for (found, expected) in correct_rois:
+        for (found, expected) in duplicated_true_positives:
             if found == found_roi and found in false_positive:
                 false_positive.remove(found)
 
