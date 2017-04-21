@@ -29,7 +29,7 @@ class ActivationCache:
         self.load_image = load_image
         self.ignore_persistence = ignore_persistence
 
-        if not os.path.exists(self.path):
+        if not ignore_persistence and not os.path.exists(self.path):
             os.makedirs(self.path)
 
     def load(self, img):

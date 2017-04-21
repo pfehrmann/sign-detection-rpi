@@ -8,10 +8,10 @@ from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 def use_net():
     model = "net_separate/train.prototxt"
-    weights = "data/snapshot/_iter_30.caffemodel"
+    weights = "data/snapshot/_iter_5.caffemodel"
     net_bbr = caffe.Net(model, weights, caffe.TEST)
 
-    img = caffe.io.load_image("E:/development/GTSDB/FullIJCNN2013/00028.ppm")
+    img = caffe.io.load_image("/home/leifb/Development/Data/GTSDB/00028.ppm")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     detector = load_input_detector()
 
@@ -75,6 +75,18 @@ def bbox_transform_inv(roi, delta):
     pred_ctr_y = dy * height + ctr_y
     pred_w = np.exp(dw) * width
     pred_h = np.exp(dh) * height
+
+    if np.isinf(pred_w):
+        if pred_w > 0:
+            pred_w = np.finfo(np.float64).max
+        else:
+            pred_w = np.finfo(np.float64).min
+
+    if np.isinf(pred_h):
+        if pred_h > 0:
+            pred_h = np.finfo(np.float64).max
+        else:
+            pred_h = np.finfo(np.float64).min
 
     roi.x1 = pred_ctr_x - 0.5 * pred_w
     roi.x2 = pred_ctr_x + 0.5 * pred_w

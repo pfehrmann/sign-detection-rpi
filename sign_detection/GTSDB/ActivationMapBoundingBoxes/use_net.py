@@ -122,6 +122,10 @@ class Detector(DetectorBase):
         large_set.extend(small_set)
         return large_set
 
+    def get_distinct_regions_by_grid(self, regions, w, h):
+
+        pass
+
     def collect_regions(self, im):
         """
         Get regions from all sizes of images
