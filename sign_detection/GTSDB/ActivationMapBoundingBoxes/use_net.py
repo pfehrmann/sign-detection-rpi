@@ -437,6 +437,9 @@ def draw_regions(rois, image, color=(0, 0, 1), print_class=False):
             roi = roi[0]
         except:
             pass
+
+        roi.clip(image.shape[1], image.shape[0])
+
         cv2.rectangle(image, (int(roi.x1), int(roi.y1)), (int(roi.x2), int(roi.y2)), color=color, thickness=2)
         if print_class:
             retval, base_line = cv2.getTextSize(str(roi.sign), cv2.FONT_HERSHEY_PLAIN, 1, 1)

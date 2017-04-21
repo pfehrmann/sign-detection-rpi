@@ -8,7 +8,7 @@ from sign_detection.model.RegionOfInterest import RegionOfInterest
 
 def use_net():
     model = "net_separate/train.prototxt"
-    weights = "data/snapshot/_iter_5.caffemodel"
+    weights = "data/snapshot/_iter_7200.caffemodel"
     net_bbr = caffe.Net(model, weights, caffe.TEST)
 
     img = caffe.io.load_image("/home/leifb/Development/Data/GTSDB/00028.ppm")
@@ -51,9 +51,9 @@ def bbr(bbr_net, activation):
     out = bbr_net.forward(blobs=['ip1'])
     return out['ip1'].copy()
 
+
 def bbox_transform_inv(roi, delta):
     """
-
     :param roi:
     :param delta:
     :return:
@@ -94,6 +94,7 @@ def bbox_transform_inv(roi, delta):
     roi.y2 = pred_ctr_y + 0.5 * pred_h
 
     return roi
+
 
 def load_input_detector():
     net = "../ActivationMapBoundingBoxes/mini_net/deploy.prototxt"
