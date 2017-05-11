@@ -1,2 +1,3 @@
-# sign-detection-playground
-Playground for sign detection. To be thrown away.
+# sign-detection-rpi
+
+Implementation zur Projektarbeit Erkennung von Verkehrszeichen mitEmbedded Systems.
